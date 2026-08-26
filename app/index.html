@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon GO Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <h1>GO Tracker</h1>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-section="pokedex">📖 Pokédex</button>
+        <button class="nav-btn" data-section="shiny">✨ Shiny</button>
+        <button class="nav-btn" data-section="resources">💎 Risorse</button>
+        <button class="nav-btn" data-section="medals">🏅 Medaglie</button>
+        <button class="nav-btn" data-section="battles">⚔️ Battaglie</button>
+        <button class="nav-btn" data-section="legendaries">🌟 Leggendari</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btn-export" class="btn btn-secondary">⬇ Esporta JSON</button>
+        <button id="btn-import" class="btn btn-secondary">⬆ Importa JSON</button>
+        <input type="file" id="import-file" accept=".json" hidden>
+        <p class="save-status" id="save-status">Salvato</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- Dashboard -->
+      <section id="section-dashboard" class="section active">
+        <header class="section-header">
+          <h2>Dashboard</h2>
+          <p>Riepilogo generale dei tuoi progressi</p>
+        </header>
+        <div class="cards-grid" id="dashboard-cards"></div>
+      </section>
+
+      <!-- Pokédex -->
+      <section id="section-pokedex" class="section">
+        <header class="section-header">
+          <h2>Pokédex</h2>
+          <p>Inserisci catturati e visti per ogni generazione</p>
+        </header>
+        <div class="table-wrap">
+          <table class="data-table" id="pokedex-table">
+            <thead>
+              <tr>
+                <th>Gen</th>
+                <th>Totale</th>
+                <th class="manual">Catturati</th>
+                <th class="manual">Visti</th>
+                <th class="auto">Mancanti</th>
+                <th class="auto">% Catturati</th>
+                <th class="auto">% Visti</th>
+              </tr>
+            </thead>
+            <tbody id="pokedex-body"></tbody>
+            <tfoot id="pokedex-foot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- Shiny -->
+      <section id="section-shiny" class="section">
+        <header class="section-header">
+          <h2>Registro Shiny</h2>
+          <p>IV% calcolato automaticamente da Att/Dif/PS (0–15)</p>
+        </header>
+        <button id="btn-add-shiny" class="btn btn-primary">+ Aggiungi Shiny</button>
+        <div class="table-wrap">
+          <table class="data-table" id="shiny-table">
+            <thead>
+              <tr>
+                <th class="manual">Data</th>
+                <th class="manual">Pokémon</th>
+                <th class="manual">CP</th>
+                <th class="manual">IV Att</th>
+                <th class="manual">IV Dif</th>
+                <th class="manual">IV PS</th>
+                <th class="auto">IV %</th>
+                <th class="manual">Metodo</th>
+                <th class="manual">Note</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="shiny-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Risorse -->
+      <section id="section-resources" class="section">
+        <header class="section-header">
+          <h2>Risorse & Livello</h2>
+          <p>Inserisci XP totale: livello e progresso calcolati automaticamente</p>
+        </header>
+        <div class="form-grid" id="resources-form"></div>
+        <div class="xp-progress-card" id="xp-progress"></div>
+      </section>
+
+      <!-- Medaglie -->
+      <section id="section-medals" class="section">
+        <header class="section-header">
+          <h2>Medaglie</h2>
+          <p>Tier e % verso il prossimo livello calcolati automaticamente</p>
+        </header>
+        <div class="table-wrap">
+          <table class="data-table" id="medals-table">
+            <thead>
+              <tr>
+                <th>Medaglia</th>
+                <th>Descrizione</th>
+                <th class="manual">Progresso</th>
+                <th>Bronzo</th>
+                <th>Argento</th>
+                <th>Oro</th>
+                <th>Platino</th>
+                <th class="auto">Tier</th>
+                <th class="auto">% Prossimo</th>
+              </tr>
+            </thead>
+            <tbody id="medals-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Battaglie -->
+      <section id="section-battles" class="section">
+        <header class="section-header">
+          <h2>Battaglie & Buddy</h2>
+          <p>Win rate e caramelle/km calcolati automaticamente</p>
+        </header>
+        <div class="battles-grid" id="battles-grid"></div>
+      </section>
+
+      <!-- Leggendari -->
+      <section id="section-legendaries" class="section">
+        <header class="section-header">
+          <h2>Leggendari</h2>
+          <p>Win rate = catture ÷ tentativi raid</p>
+        </header>
+        <div class="table-wrap">
+          <table class="data-table" id="legendaries-table">
+            <thead>
+              <tr>
+                <th>Pokémon</th>
+                <th class="manual">Catturato</th>
+                <th class="manual">Shiny</th>
+                <th class="manual">IV %</th>
+                <th class="manual">Data</th>
+                <th class="manual">Tentativi</th>
+                <th class="manual">Catture</th>
+                <th class="auto">Win Rate</th>
+              </tr>
+            </thead>
+            <tbody id="legendaries-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
