@@ -68,7 +68,9 @@ IV% = (Att + Dif + PS) / 45 × 100
 **Manuale:** Data, Pokémon, CP, IV Att/Dif/PS, Metodo, Note.
 
 #### XP
-Tabella di riferimento livelli 1–50 con XP cumulativo (solo lettura).
+Tabella di riferimento livelli 1–80 con XP cumulativo (solo lettura).
+
+> **Nota:** dall'aggiornamento di ottobre 2025 il cap è **livello 80**. I livelli 71–80 richiedono anche ricerche di salita di livello oltre all'XP necessario.
 
 #### Medaglie
 32 medaglie con soglie Bronzo/Argento/Oro/Platino.
@@ -128,7 +130,7 @@ Poi apri [http://localhost:8080](http://localhost:8080) nel browser.
 | **Dashboard** | — | Riepilogo da tutte le sezioni |
 | **Pokédex** | Catturati, Visti per gen | Mancanti, % |
 | **Shiny** | Data, Pokémon, CP, IV, Metodo | IV% |
-| **Risorse** | Stardust, Polvere, Ball, Mega Energy, XP | Livello, barra progresso XP |
+| **Risorse** | Stardust, Polvere, Ball, Mega Energy, XP | Livello (1–80), barra progresso XP |
 | **Medaglie** | Progresso | Tier, % prossimo livello |
 | **Battaglie** | Raid/GBL V-P, Buddy km/caramelle/cuori | Win rate, caramelle/km |
 | **Leggendari** | Catturato, Shiny, IV%, Data, Tentativi | Win rate |
@@ -159,7 +161,7 @@ I dati vengono salvati automaticamente in **localStorage** del browser ad ogni m
 ### Calcolato automaticamente
 - % Pokédex (catturati e visti)
 - IV% shiny: `(Att + Dif + PS) / 45 × 100`
-- Livello da XP totale (tabella 1–50)
+- Livello da XP totale (tabella 1–80)
 - XP mancanti e barra di progresso
 - Win rate raid e GBL: `Vittorie / (Vittorie + Sconfitte)`
 - Caramelle per km buddy: `Caramelle / Km`

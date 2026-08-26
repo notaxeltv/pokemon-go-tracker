@@ -4,13 +4,19 @@ const STORAGE_KEY = "pokemon-go-tracker-data";
 
 const GEN_TOTALS = { 1: 151, 2: 100, 3: 135, 4: 107, 5: 156, 6: 72, 7: 88, 8: 96, 9: 120 };
 
+// Tabella XP cumulativo (aggiornamento livelli 1–80, ottobre 2025)
 const XP_TABLE = [
-  0, 2500, 5000, 9000, 13000, 18000, 24000, 31000, 39000, 48000,
-  58000, 70000, 84000, 100000, 118000, 139000, 163200, 190000, 220800, 255000,
-  294000, 337500, 385600, 438000, 495000, 556800, 624400, 697500, 776000, 861000,
-  953000, 1052000, 1158000, 1272000, 1394000, 1524000, 1662400, 1809600, 1966200, 2132000,
-  2307600, 2493600, 2690400, 2898400, 3118400, 3351600, 3598400, 3859600, 4135600, 4426800,
+  0, 2500, 5500, 9000, 13000, 18000, 24000, 31000, 39000, 48000,
+  58000, 70000, 84000, 100000, 118000, 139000, 163500, 191500, 223000, 258000,
+  300000, 349000, 405000, 468000, 538000, 621000, 717000, 826000, 948000, 1083000,
+  1241000, 1422000, 1626000, 1853000, 2103000, 2393000, 2723000, 3093000, 3503000, 3953000,
+  4473000, 5063000, 5723000, 6453000, 7253000, 8153000, 9153000, 10253000, 11453000, 12753000,
+  14193000, 15773000, 17493000, 19353000, 21353000, 23553000, 25953000, 28553000, 31353000, 34353000,
+  37703000, 41403000, 45453000, 49853000, 54603000, 59853000, 65603000, 71853000, 78603000, 85853000,
+  93853000, 102603000, 112103000, 122353000, 133353000, 145353000, 158353000, 172353000, 187353000, 203353000,
 ];
+
+const MAX_LEVEL = 80;
 
 const MEDALS = [
   { name: "Studente", desc: "Tipo Normale", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
@@ -131,13 +137,13 @@ function calcLevelFromXp(xp) {
     if (xp >= XP_TABLE[i]) level = i + 1;
     else break;
   }
-  return Math.min(level, 50);
+  return Math.min(level, MAX_LEVEL);
 }
 
 function calcXpInfo(xp) {
   const level = calcLevelFromXp(xp);
-  if (level >= 50) {
-    return { level: 50, currentXp: xp, nextLevelXp: XP_TABLE[49], xpInLevel: 0, xpNeeded: 0, progress: 1 };
+  if (level >= MAX_LEVEL) {
+    return { level: MAX_LEVEL, currentXp: xp, nextLevelXp: XP_TABLE[MAX_LEVEL - 1], xpInLevel: 0, xpNeeded: 0, progress: 1 };
   }
   const currentLevelXp = XP_TABLE[level - 1];
   const nextLevelXp = XP_TABLE[level];
@@ -422,16 +428,19 @@ function renderResources() {
 
   const xp = calcXpInfo(r.totalXp);
   document.getElementById("xp-progress").innerHTML = `
-    <h3>Livello ${xp.level}${xp.level >= 50 ? " (MAX)" : ` → ${xp.level + 1}`}</h3>
+    <h3>Livello ${xp.level}${xp.level >= MAX_LEVEL ? " (MAX)" : ` → ${xp.level + 1}`}</h3>
     <div class="progress-bar-wrap">
       <div class="progress-bar" style="width:${(xp.progress * 100).toFixed(1)}%"></div>
     </div>
     <div class="xp-stats">
       <span>XP attuale: ${fmtNum(xp.currentXp)}</span>
-      ${xp.level < 50
+      ${xp.level < MAX_LEVEL
         ? `<span>Mancano ${fmtNum(xp.xpNeeded - xp.xpInLevel)} XP al livello ${xp.level + 1}</span>`
         : "<span>Livello massimo raggiunto!</span>"}
-    </div>`;
+    </div>
+    ${xp.level >= 70 && xp.level < MAX_LEVEL
+      ? '<p class="xp-note">I livelli 71–80 richiedono anche ricerche di salita di livello oltre all\'XP.</p>'
+      : ""}`;
 }
 
 function renderMedals() {

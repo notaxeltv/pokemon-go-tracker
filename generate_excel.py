@@ -24,13 +24,20 @@ LEFT = Alignment(horizontal="left", vertical="center")
 
 GEN_TOTALS = {1: 151, 2: 100, 3: 135, 4: 107, 5: 156, 6: 72, 7: 88, 8: 96, 9: 120}
 
+# Tabella XP cumulativo (aggiornamento livelli 1–80, ottobre 2025)
 XP_TABLE = [
-    0, 2500, 5000, 9000, 13000, 18000, 24000, 31000, 39000, 48000,
-    58000, 70000, 84000, 100000, 118000, 139000, 163200, 190000, 220800, 255000,
-    294000, 337500, 385600, 438000, 495000, 556800, 624400, 697500, 776000, 861000,
-    953000, 1052000, 1158000, 1272000, 1394000, 1524000, 1662400, 1809600, 1966200, 2132000,
-    2307600, 2493600, 2690400, 2898400, 3118400, 3351600, 3598400, 3859600, 4135600, 4426800,
+    0, 2500, 5500, 9000, 13000, 18000, 24000, 31000, 39000, 48000,
+    58000, 70000, 84000, 100000, 118000, 139000, 163500, 191500, 223000, 258000,
+    300000, 349000, 405000, 468000, 538000, 621000, 717000, 826000, 948000, 1083000,
+    1241000, 1422000, 1626000, 1853000, 2103000, 2393000, 2723000, 3093000, 3503000, 3953000,
+    4473000, 5063000, 5723000, 6453000, 7253000, 8153000, 9153000, 10253000, 11453000, 12753000,
+    14193000, 15773000, 17493000, 19353000, 21353000, 23553000, 25953000, 28553000, 31353000, 34353000,
+    37703000, 41403000, 45453000, 49853000, 54603000, 59853000, 65603000, 71853000, 78603000, 85853000,
+    93853000, 102603000, 112103000, 122353000, 133353000, 145353000, 158353000, 172353000, 187353000, 203353000,
 ]
+
+MAX_LEVEL = 80
+XP_SHEET_END_ROW = 3 + MAX_LEVEL  # riga 83 per livello 80
 
 MEDALS = [
     ("Studente", "Tipo Normale", 10, 50, 200, 2500),
@@ -101,10 +108,11 @@ def set_header_row(ws, row, headers, start_col=1):
 
 def build_xp_sheet(wb):
     ws = wb.create_sheet("XP")
-    ws["A1"] = "Tabella Livelli e XP Cumulativo (1–50)"
+    ws["A1"] = "Tabella Livelli e XP Cumulativo (1–80)"
     ws["A1"].font = TITLE_FONT
+    ws["A2"] = "Nota: i livelli 71–80 richiedono anche ricerche di salita di livello oltre all'XP."
     set_header_row(ws, 3, ["Livello", "XP Cumulativo"])
-    for lvl in range(1, 51):
+    for lvl in range(1, MAX_LEVEL + 1):
         r = lvl + 3
         ws.cell(r, 1, lvl)
         ws.cell(r, 2, XP_TABLE[lvl - 1])
@@ -313,9 +321,9 @@ def build_dashboard_sheet(wb):
     ws["A11"] = "LIVELLO & XP"
     ws["A11"].font = BOLD
     ws["A12"], ws["A13"], ws["A14"] = "Livello attuale", "XP per prossimo livello", "XP mancanti"
-    ws["B12"] = '=IF(B9="","",MATCH(B9,XP!$B$4:$B$53,1))'
-    ws["B13"] = '=IF(B12>=50,0,INDEX(XP!$B$4:$B$53,B12+1))'
-    ws["B14"] = '=IF(B12>=50,0,B13-B9)'
+    ws["B12"] = f'=IF(B9="","",MATCH(B9,XP!$B$4:$B${XP_SHEET_END_ROW},1))'
+    ws["B13"] = f'=IF(B12>={MAX_LEVEL},0,INDEX(XP!$B$4:$B${XP_SHEET_END_ROW},B12+1))'
+    ws["B14"] = f'=IF(B12>={MAX_LEVEL},0,B13-B9)'
     for row in (12, 13, 14):
         style_cell(ws.cell(row, 1), alignment=LEFT)
         style_cell(ws.cell(row, 2), GREEN, alignment=CENTER, number_format="#,##0")

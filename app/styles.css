@@ -406,6 +406,16 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--text-secondary);
 }
 
+.xp-note {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--warning);
+}
+
 /* Battles grid */
 .battles-grid {
   display: grid;
