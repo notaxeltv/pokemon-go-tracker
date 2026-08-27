@@ -183,8 +183,10 @@ function renderSpeciesDex() {
     const e = state.speciesDex[p.id] || { caught: false, seen: false, shiny: false };
     const cls = e.caught ? "caught" : e.seen ? "seen" : "";
     return `<div class="species-card ${cls}" data-id="${p.id}">
-      <div class="species-num">#${String(p.id).padStart(4, "0")}</div>
-      <div class="species-name">${esc(p.name)}</div>
+      <button type="button" class="species-info-btn" data-id="${p.id}" title="Dettagli ottenimento/evoluzione">
+        <div class="species-num">#${String(p.id).padStart(4, "0")}</div>
+        <div class="species-name">${esc(p.name)}</div>
+      </button>
       <div class="species-actions">
         <label title="Visto"><input type="checkbox" data-id="${p.id}" data-field="seen"${e.seen ? " checked" : ""}> 👁</label>
         <label title="Catturato"><input type="checkbox" data-id="${p.id}" data-field="caught"${e.caught ? " checked" : ""}> ✓</label>
@@ -194,7 +196,8 @@ function renderSpeciesDex() {
   }).join("") + (list.length > 300 ? `<p class="empty-msg">Mostrati 300 di ${list.length}. Affina la ricerca.</p>` : "");
 
   grid.querySelectorAll("input").forEach((input) => {
-    input.addEventListener("change", () => {
+    input.addEventListener("change", (ev) => {
+      ev.stopPropagation();
       const id = Number(input.dataset.id);
       const field = input.dataset.field;
       updateState((s) => {
@@ -203,6 +206,10 @@ function renderSpeciesDex() {
         if (field === "caught" && input.checked) entry.seen = true;
       }, { syncGen: true });
     });
+  });
+
+  grid.querySelectorAll(".species-info-btn").forEach((btn) => {
+    btn.addEventListener("click", () => openSpeciesModal(Number(btn.dataset.id)));
   });
 }
 
@@ -529,6 +536,62 @@ function closeMedalModal() {
   activeMedalId = null;
 }
 
+function openSpeciesModal(id) {
+  const p = POKEMON.find((x) => x.id === id);
+  if (!p) return;
+  document.getElementById("species-modal-title").textContent = p.name;
+  const types = (p.types || []).join(" · ") || "—";
+  document.getElementById("species-modal-desc").textContent =
+    `#${String(p.id).padStart(4, "0")} · Gen ${p.gen} · ${types}`;
+
+  document.getElementById("species-modal-obtain").innerHTML =
+    (p.obtain || []).map((o) => `<li>${esc(o)}</li>`).join("") || "<li>Dati non disponibili</li>";
+
+  const fromBlock = document.getElementById("species-evolves-from-block");
+  const fromList = document.getElementById("species-modal-from");
+  if (p.evolvesFrom?.length) {
+    fromBlock.classList.remove("hidden");
+    fromList.innerHTML = p.evolvesFrom.map((e) =>
+      `<li><strong>${esc(e.fromName)}</strong> — ${esc(e.how)}</li>`).join("");
+  } else {
+    fromBlock.classList.add("hidden");
+    fromList.innerHTML = "";
+  }
+
+  const toBlock = document.getElementById("species-evolves-to-block");
+  const toList = document.getElementById("species-modal-to");
+  if (p.evolvesTo?.length) {
+    toBlock.classList.remove("hidden");
+    toList.innerHTML = p.evolvesTo.map((e) =>
+      `<li><strong>${esc(e.name)}</strong> — ${esc(e.how)}</li>`).join("");
+  } else {
+    toBlock.classList.add("hidden");
+    toList.innerHTML = "";
+  }
+
+  const buddy = document.getElementById("species-modal-buddy");
+  buddy.textContent = p.buddyKm
+    ? `Buddy: 1 caramella ogni ${p.buddyKm} km percorsi insieme.`
+    : "";
+
+  const modal = document.getElementById("species-modal");
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closeSpeciesModal() {
+  document.getElementById("species-modal").classList.add("hidden");
+  document.getElementById("species-modal").setAttribute("aria-hidden", "true");
+}
+
+function initSpeciesModal() {
+  document.getElementById("species-modal-close").addEventListener("click", closeSpeciesModal);
+  document.getElementById("species-modal-backdrop").addEventListener("click", closeSpeciesModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSpeciesModal();
+  });
+}
+
 function initNav() {
   document.querySelectorAll(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -553,7 +616,9 @@ function initMedalModal() {
       if (medal) drawMedalChart(medal, chartPeriod);
     });
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && activeMedalId) closeMedalModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && activeMedalId) closeMedalModal();
+  });
 }
 
 function init() {
@@ -561,6 +626,7 @@ function init() {
   seedHistories();
   initNav();
   initMedalModal();
+  initSpeciesModal();
   renderAll();
 
   document.getElementById("account-select").addEventListener("change", (e) => switchAccount(e.target.value));

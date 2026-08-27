@@ -101,6 +101,7 @@
         <div id="pokedex-species-panel" class="hidden">
           <div id="species-toolbar" class="toolbar-row"></div>
           <p id="species-summary" class="summary-line"></p>
+          <p class="summary-line">Clicca su una scheda per vedere come ottenerlo e come evolve.</p>
           <div id="species-grid" class="species-grid"></div>
         </div>
       </section>
@@ -161,6 +162,34 @@
             <p id="medal-chart-empty" class="chart-empty hidden">Nessun dato storico.</p>
           </div>
           <p class="chart-legend" id="medal-chart-legend"></p>
+        </div>
+      </div>
+
+      <div id="species-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="species-modal-backdrop"></div>
+        <div class="modal-panel" role="dialog">
+          <header class="modal-header">
+            <div>
+              <h3 id="species-modal-title">Pokémon</h3>
+              <p id="species-modal-desc" class="modal-subtitle"></p>
+            </div>
+            <button type="button" class="modal-close" id="species-modal-close">✕</button>
+          </header>
+          <div class="species-detail">
+            <section class="detail-block">
+              <h4>Come si ottiene</h4>
+              <ul id="species-modal-obtain" class="detail-list"></ul>
+            </section>
+            <section class="detail-block" id="species-evolves-from-block">
+              <h4>Evoluzione da</h4>
+              <ul id="species-modal-from" class="detail-list"></ul>
+            </section>
+            <section class="detail-block" id="species-evolves-to-block">
+              <h4>Come evolve</h4>
+              <ul id="species-modal-to" class="detail-list"></ul>
+            </section>
+            <p id="species-modal-buddy" class="detail-note"></p>
+          </div>
         </div>
       </div>
 

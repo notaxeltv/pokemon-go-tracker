@@ -14,6 +14,7 @@ Tracker completo per i progressi in **Pokémon GO** con inserimento manuale dei 
 ### App Web
 - **Dashboard** con riepilogo, obiettivi vicini e grafici storici (XP, Stardust, % Pokédex, raid)
 - **Pokédex** per generazione e **checklist 1025 specie** con filtri
+  - Per ogni Pokémon: **come si ottiene** (selvatico, raid, evento, evoluzione…) e **come evolve** (caramelle, camminata buddy, pietre, esca, scambio…)
 - **Shiny**, **Vetrina** (migliori catture), **Risorse & Livello** (1–80)
 - **72 medaglie** con grafico storico e ricerca/ordinamento
 - **Battaglie**, **Buddy** dettagliato, **Eventi**, **Ricerche**
