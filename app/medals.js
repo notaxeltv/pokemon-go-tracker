@@ -511,6 +511,36 @@ const MEDALS = [
     "platinum": 100
   },
   {
+    "id": "esploratore_esperto",
+    "name": "Esploratore esperto",
+    "category": "Esplorazione",
+    "desc": "Percorsi (Routes) completati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 600
+  },
+  {
+    "id": "membro_community",
+    "name": "Membro della community",
+    "category": "Sociale",
+    "desc": "Check-in a eventi Campfire",
+    "bronze": 1,
+    "silver": 20,
+    "gold": 50,
+    "platinum": 100
+  },
+  {
+    "id": "anima_festa",
+    "name": "Anima della festa",
+    "category": "Sociale",
+    "desc": "Sfide di gruppo (Party Play) completate",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 100,
+    "platinum": 200
+  },
+  {
     "id": "studente",
     "name": "Studente",
     "category": "Tipo",

@@ -73,7 +73,7 @@ Tabella di riferimento livelli 1–80 con XP cumulativo (solo lettura).
 > **Nota:** dall'aggiornamento di ottobre 2025 il cap è **livello 80**. I livelli 71–80 richiedono anche ricerche di salita di livello oltre all'XP necessario.
 
 #### Medaglie
-**69 medaglie** con soglie ufficiali Bronzo/Argento/Oro/Platino, organizzate per categoria:
+**72 medaglie** ufficiali con soglie Bronzo/Argento/Oro/Platino, organizzate per categoria:
 
 | Categoria | Esempi |
 |-----------|--------|
@@ -81,7 +81,8 @@ Tabella di riferimento livelli 1–80 con XP cumulativo (solo lettura).
 | **Tipo** | Studente, Accendino, Domatore … (18 tipi) |
 | **Attività** | Podista, Collezionista, Zaino, Turista … |
 | **Battaglia** | Campione, Leggenda delle lotte, Capopalestra, Veterano GBL … |
-| **Sociale** | Gentiluomo, Pilota, Migliori amici, Idolo … |
+| **Sociale** | Gentiluomo, Pilota, Migliori amici, Membro della community … |
+| **Esplorazione** | Esploratore esperto (Routes) |
 | **Team GO Rocket** | Eroe, Ultra Eroe, Purificatore |
 | **Megaevoluzione** | Successore, Guru Megaevoluzione |
 | **Speciale** | Unown, Fan di Pikachu, Vivillon, Wayfarer … |
@@ -142,7 +143,7 @@ Poi apri [http://localhost:8080](http://localhost:8080) nel browser.
 | **Pokédex** | Catturati, Visti per gen | Mancanti, % |
 | **Shiny** | Data, Pokémon, CP, IV, Metodo | IV% |
 | **Risorse** | Stardust, Polvere, Ball, Mega Energy, XP | Livello (1–80), barra progresso XP |
-| **Medaglie** | Progresso | Tier, % prossimo livello |
+| **Medaglie** | Progresso per medaglia | Tier, % prossimo, filtro per categoria, **grafico storico** (giorni/mesi/anni) |
 | **Battaglie** | Raid/GBL V-P, Buddy km/caramelle/cuori | Win rate, caramelle/km |
 | **Leggendari** | Catturato, Shiny, IV%, Data, Tentativi | Win rate |
 
@@ -152,8 +153,10 @@ I dati vengono salvati automaticamente in **localStorage** del browser ad ogni m
 
 ### Backup JSON
 
-- **Esporta JSON** — scarica un backup completo
+- **Esporta JSON** — scarica un backup completo (include anche lo storico progressi medaglie)
 - **Importa JSON** — ripristina da un backup precedente
+
+> Lo **storico medaglie** si aggiorna ogni volta che modifichi il progresso. Clicca sul nome di una medaglia per aprire il grafico con viste Giorni, Mesi e Anni.
 
 > I dati Excel e quelli dell'app **non si sincronizzano** automaticamente. Usa l'export/import JSON per migrare tra dispositivi o fare backup dell'app.
 
@@ -187,12 +190,14 @@ I dati vengono salvati automaticamente in **localStorage** del browser ad ogni m
 ```
 pokemon-go-tracker/
 ├── PokemonGO_Tracker.xlsx   # Foglio Excel generato
-├── generate_excel.py        # Script per rigenerare l'Excel
+├── generate_excel.py        # Script per rigenerare l'Excel e medals.js
+├── medals.json              # Elenco medaglie (fonte dati)
 ├── README.md
 ├── .gitignore
 └── app/
     ├── index.html
     ├── app.js
+    ├── medals.js            # Generato da generate_excel.py
     └── styles.css
 ```
 
