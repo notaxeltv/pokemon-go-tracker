@@ -43,10 +43,16 @@ MAX_LEVEL = 80
 XP_SHEET_END_ROW = 3 + MAX_LEVEL  # riga 83 per livello 80
 
 MEDALS_PATH = Path(__file__).parent / "medals.json"
+POKEMON_PATH = Path(__file__).parent / "pokemon.json"
 
 
 def load_medals():
     with open(MEDALS_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_pokemon():
+    with open(POKEMON_PATH, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -59,7 +65,17 @@ def write_medals_js(medals):
     )
 
 
+def write_pokemon_js(pokemon):
+    out = Path(__file__).parent / "app" / "pokemon.js"
+    out.write_text(
+        "// Generato da generate_excel.py — non modificare manualmente\n"
+        f"const POKEMON = {json.dumps(pokemon, ensure_ascii=False)};\n",
+        encoding="utf-8",
+    )
+
+
 MEDALS = load_medals()
+POKEMON = load_pokemon()
 
 LEGENDARIES = [
     "Articuno", "Zapdos", "Moltres", "Mewtwo", "Raikou", "Entei", "Suicune",
@@ -213,6 +229,86 @@ def build_medals_sheet(wb):
         style_cell(ws.cell(r, 10), GREEN, alignment=CENTER, number_format="0.00%")
     for col, w in zip("ABCDEFGHIJ", [18, 14, 32, 12, 10, 10, 10, 10, 12, 12]):
         ws.column_dimensions[col].width = w
+
+
+def build_species_sheet(wb):
+    ws = wb.create_sheet("Specie")
+    ws["A1"] = "Pokédex per Specie (1025)"
+    ws["A1"].font = TITLE_FONT
+    ws["A2"] = "Segna Visto/Catturato/Shiny (Sì/No). Sincronizza con l'app via Sync Excel JSON."
+    set_header_row(ws, 4, ["#", "Nome", "Gen", "Visto", "Catturato", "Shiny"])
+    start = 5
+    for i, p in enumerate(POKEMON):
+        r = start + i
+        ws.cell(r, 1, p["id"])
+        ws.cell(r, 2, p["name"])
+        ws.cell(r, 3, p["gen"])
+        ws.cell(r, 4, "No")
+        ws.cell(r, 5, "No")
+        ws.cell(r, 6, "No")
+        style_cell(ws.cell(r, 1), GREEN, alignment=CENTER)
+        style_cell(ws.cell(r, 2), alignment=LEFT)
+        style_cell(ws.cell(r, 3), GREEN, alignment=CENTER)
+        for col in (4, 5, 6):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER)
+    for col, w in zip("ABCDEF", [8, 18, 6, 10, 12, 10]):
+        ws.column_dimensions[col].width = w
+
+
+def build_events_sheet(wb):
+    ws = wb.create_sheet("Eventi")
+    ws["A1"] = "Registro Eventi"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 4, ["Data", "Nome", "Tipo", "Pokémon", "Shiny ottenuti", "Note"])
+    for r in range(5, 55):
+        for col in range(1, 7):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER if col != 6 else LEFT)
+    widths = [12, 22, 16, 16, 14, 30]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
+def build_quests_sheet(wb):
+    ws = wb.create_sheet("Ricerche")
+    ws["A1"] = "Ricerche Speciali e sul Campo"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 4, ["Nome", "Tipo", "Stato", "Data inizio", "Data completamento", "Note"])
+    for r in range(5, 55):
+        for col in range(1, 7):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER if col != 6 else LEFT)
+    widths = [24, 14, 12, 14, 18, 30]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
+def build_buddies_sheet(wb):
+    ws = wb.create_sheet("Buddy")
+    ws["A1"] = "Registro Buddy"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 4, ["Pokémon", "Attivo", "Amicizia", "Km", "Caramelle", "Cuori", "Data inizio"])
+    for r in range(5, 55):
+        for col in range(1, 8):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER)
+    widths = [18, 10, 16, 10, 12, 10, 14]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
+def build_showcase_sheet(wb):
+    ws = wb.create_sheet("Vetrina")
+    ws["A1"] = "Vetrina — Migliori Catture"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 4, ["Data", "Pokémon", "CP", "IV Att", "IV Dif", "IV PS", "IV %", "Tag"])
+    for r in range(5, 55):
+        for col in range(1, 9):
+            if col == 7:
+                ws.cell(r, 7, f'=IF(OR(D{r}="",E{r}="",F{r}=""),"",ROUND((D{r}+E{r}+F{r})/45*100,2))')
+                style_cell(ws.cell(r, col), GREEN, alignment=CENTER, number_format='0.00"%"')
+            else:
+                style_cell(ws.cell(r, col), YELLOW, alignment=CENTER)
+    widths = [12, 18, 8, 8, 8, 8, 10, 16]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
 
 
 def build_battles_sheet(wb):
@@ -371,20 +467,29 @@ def main():
 
     build_dashboard_sheet(wb)
     build_pokedex_sheet(wb)
+    build_species_sheet(wb)
     build_shiny_sheet(wb)
     build_xp_sheet(wb)
     build_medals_sheet(wb)
     build_battles_sheet(wb)
+    build_buddies_sheet(wb)
+    build_events_sheet(wb)
+    build_quests_sheet(wb)
+    build_showcase_sheet(wb)
     build_legendaries_sheet(wb)
 
-    # Dashboard come primo foglio
-    order = ["Dashboard", "Pokedex", "Shiny", "XP", "Medaglie", "Battaglie", "Leggendari"]
+    order = [
+        "Dashboard", "Pokedex", "Specie", "Shiny", "XP", "Medaglie",
+        "Battaglie", "Buddy", "Eventi", "Ricerche", "Vetrina", "Leggendari",
+    ]
     wb._sheets.sort(key=lambda s: order.index(s.title))
 
     wb.save(OUTPUT)
     write_medals_js(MEDALS)
+    write_pokemon_js(POKEMON)
     print(f"Creato: {OUTPUT}")
     print(f"Aggiornato: app/medals.js ({len(MEDALS)} medaglie)")
+    print(f"Aggiornato: app/pokemon.js ({len(POKEMON)} specie)")
 
 
 if __name__ == "__main__":

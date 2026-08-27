@@ -15,10 +15,24 @@
   --danger: #e85d5d;
   --manual: rgba(240, 180, 41, 0.12);
   --auto: rgba(76, 175, 130, 0.12);
+  --chart-bg: #1a1d27;
   --radius: 10px;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  --sidebar-width: 240px;
+  --sidebar-width: 260px;
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f4f6fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #eef1f6;
+  --border: #d5dae3;
+  --text-primary: #1a1d27;
+  --text-secondary: #5c6370;
+  --accent: #3b6fd4;
+  --chart-bg: #eef1f6;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -74,11 +88,12 @@ body {
 
 .nav {
   flex: 1;
-  padding: 16px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .nav-btn {
@@ -709,6 +724,217 @@ input[type="number"]::-webkit-outer-spin-button {
 .legend-swatch.gold { background: #ffd54f; }
 .legend-swatch.platinum { background: #b8c5ff; }
 
+/* Account bar */
+.account-bar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  flex: 1;
+}
+
+.select-input, .search-input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+/* Dashboard panels */
+.dashboard-panels {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.panel h3 {
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.panel-wide {
+  min-width: 0;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 60px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.goal-item:hover {
+  background: var(--border);
+}
+
+.goal-icon { font-size: 1.1rem; }
+.goal-title { font-weight: 600; font-size: 0.9rem; }
+.goal-sub { font-size: 0.78rem; color: var(--text-secondary); }
+
+.goal-bar-wrap {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.goal-bar {
+  height: 100%;
+  background: var(--success);
+  border-radius: 3px;
+}
+
+.dash-chart-tab, .dash-period-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dash-chart-tab.active, .dash-period-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pokedex-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pokedex-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Species grid */
+.toolbar-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.toolbar-row .search-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.toolbar-row .select-input {
+  width: auto;
+  min-width: 140px;
+}
+
+.summary-line {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.species-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  opacity: 0.65;
+}
+
+.species-card.seen { opacity: 0.85; border-color: var(--warning); }
+.species-card.caught { opacity: 1; border-color: var(--success); background: rgba(76, 175, 130, 0.08); }
+
+.species-num {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.species-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 4px 0 8px;
+}
+
+.species-actions {
+  display: flex;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.species-actions label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 24px;
+}
+
+.desc-col {
+  color: var(--text-secondary);
+  max-width: 220px;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -737,5 +963,9 @@ input[type="number"]::-webkit-outer-spin-button {
     text-align: center;
     font-size: 0.82rem;
     padding: 8px 10px;
+  }
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
   }
 }
