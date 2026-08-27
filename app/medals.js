@@ -1,0 +1,723 @@
+// Generato da generate_excel.py — non modificare manualmente
+const MEDALS = [
+  {
+    "id": "podista",
+    "name": "Podista",
+    "category": "Attività",
+    "desc": "Km percorsi",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 10000
+  },
+  {
+    "id": "kanto",
+    "name": "Kanto",
+    "category": "Pokédex",
+    "desc": "Pokémon Kanto registrati",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 100,
+    "platinum": 151
+  },
+  {
+    "id": "collezionista",
+    "name": "Collezionista",
+    "category": "Attività",
+    "desc": "Pokémon catturati",
+    "bronze": 30,
+    "silver": 500,
+    "gold": 2000,
+    "platinum": 50000
+  },
+  {
+    "id": "scienziato",
+    "name": "Scienziato",
+    "category": "Attività",
+    "desc": "Pokémon evoluti",
+    "bronze": 3,
+    "silver": 20,
+    "gold": 200,
+    "platinum": 2000
+  },
+  {
+    "id": "allevatore",
+    "name": "Allevatore",
+    "category": "Attività",
+    "desc": "Uova schiuse",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 500,
+    "platinum": 2500
+  },
+  {
+    "id": "zaino",
+    "name": "Zaino",
+    "category": "Attività",
+    "desc": "PokéStop visitate",
+    "bronze": 100,
+    "silver": 1000,
+    "gold": 2000,
+    "platinum": 50000
+  },
+  {
+    "id": "turista",
+    "name": "Turista",
+    "category": "Attività",
+    "desc": "PokéStop uniche visitate",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "pescatore",
+    "name": "Pescatore",
+    "category": "Attività",
+    "desc": "Magikarp enormi catturati",
+    "bronze": 3,
+    "silver": 50,
+    "gold": 300,
+    "platinum": 1000
+  },
+  {
+    "id": "combattente",
+    "name": "Combattente",
+    "category": "Battaglia",
+    "desc": "Battaglie in palestra vinte",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 4000
+  },
+  {
+    "id": "asso",
+    "name": "Asso",
+    "category": "Battaglia",
+    "desc": "Sessioni di addestramento",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "giovanotto",
+    "name": "Giovanotto",
+    "category": "Attività",
+    "desc": "Rattata minuscoli catturati",
+    "bronze": 3,
+    "silver": 50,
+    "gold": 300,
+    "platinum": 1000
+  },
+  {
+    "id": "fan_pikachu",
+    "name": "Fan di Pikachu",
+    "category": "Speciale",
+    "desc": "Pikachu catturati",
+    "bronze": 3,
+    "silver": 50,
+    "gold": 300,
+    "platinum": 1000
+  },
+  {
+    "id": "unown",
+    "name": "Unown",
+    "category": "Speciale",
+    "desc": "Forme Unown uniche catturate",
+    "bronze": 3,
+    "silver": 10,
+    "gold": 26,
+    "platinum": 28
+  },
+  {
+    "id": "johto",
+    "name": "Johto",
+    "category": "Pokédex",
+    "desc": "Pokémon Johto registrati",
+    "bronze": 5,
+    "silver": 30,
+    "gold": 70,
+    "platinum": 100
+  },
+  {
+    "id": "campione",
+    "name": "Campione",
+    "category": "Battaglia",
+    "desc": "Raid vinti",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "leggenda_lotte",
+    "name": "Leggenda delle lotte",
+    "category": "Battaglia",
+    "desc": "Raid leggendari vinti",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "esperto_bacche",
+    "name": "Esperto Bacche",
+    "category": "Attività",
+    "desc": "Bacche date in palestra",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 15000
+  },
+  {
+    "id": "capopalestra",
+    "name": "Capopalestra",
+    "category": "Battaglia",
+    "desc": "Ore di difesa palestra",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 15000
+  },
+  {
+    "id": "hoenn",
+    "name": "Hoenn",
+    "category": "Pokédex",
+    "desc": "Pokémon Hoenn registrati",
+    "bronze": 5,
+    "silver": 40,
+    "gold": 90,
+    "platinum": 135
+  },
+  {
+    "id": "ranger",
+    "name": "Ranger",
+    "category": "Attività",
+    "desc": "Ricerche sul campo completate",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2500
+  },
+  {
+    "id": "idolo",
+    "name": "Idolo",
+    "category": "Sociale",
+    "desc": "Migliori amici raggiunti",
+    "bronze": 1,
+    "silver": 2,
+    "gold": 3,
+    "platinum": 20
+  },
+  {
+    "id": "gentiluomo",
+    "name": "Gentiluomo",
+    "category": "Sociale",
+    "desc": "Scambi Pokémon",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2500
+  },
+  {
+    "id": "pilota",
+    "name": "Pilota",
+    "category": "Sociale",
+    "desc": "Km totali degli scambi",
+    "bronze": 1000,
+    "silver": 100000,
+    "gold": 1000000,
+    "platinum": 10000000
+  },
+  {
+    "id": "sinnoh",
+    "name": "Sinnoh",
+    "category": "Pokédex",
+    "desc": "Pokémon Sinnoh registrati",
+    "bronze": 5,
+    "silver": 30,
+    "gold": 80,
+    "platinum": 107
+  },
+  {
+    "id": "veterano_grande",
+    "name": "Veterano Lega Grande",
+    "category": "Battaglia",
+    "desc": "Vittorie in Lega Grande (GBL)",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 1000
+  },
+  {
+    "id": "veterano_ultra",
+    "name": "Veterano Lega Ultra",
+    "category": "Battaglia",
+    "desc": "Vittorie in Lega Ultra (GBL)",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 1000
+  },
+  {
+    "id": "veterano_master",
+    "name": "Veterano Lega Master",
+    "category": "Battaglia",
+    "desc": "Vittorie in Lega Master (GBL)",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 1000
+  },
+  {
+    "id": "fotografo",
+    "name": "Fotografo",
+    "category": "Attività",
+    "desc": "Fotobomb in modalità GO Snapshot",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 400
+  },
+  {
+    "id": "unova",
+    "name": "Unova",
+    "category": "Pokédex",
+    "desc": "Pokémon Unova registrati",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 100,
+    "platinum": 156
+  },
+  {
+    "id": "purificatore",
+    "name": "Purificatore",
+    "category": "Team GO Rocket",
+    "desc": "Pokémon oscuri purificati",
+    "bronze": 5,
+    "silver": 50,
+    "gold": 500,
+    "platinum": 1000
+  },
+  {
+    "id": "eroe",
+    "name": "Eroe",
+    "category": "Team GO Rocket",
+    "desc": "Reclute Team GO Rocket sconfitte",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "ultra_eroe",
+    "name": "Ultra Eroe",
+    "category": "Team GO Rocket",
+    "desc": "Giovanni sconfitto",
+    "bronze": 1,
+    "silver": 5,
+    "gold": 20,
+    "platinum": 50
+  },
+  {
+    "id": "migliori_amici",
+    "name": "Migliori amici",
+    "category": "Sociale",
+    "desc": "Pokémon migliori amici ottenuti",
+    "bronze": 1,
+    "silver": 10,
+    "gold": 100,
+    "platinum": 200
+  },
+  {
+    "id": "wayfarer",
+    "name": "Wayfarer",
+    "category": "Speciale",
+    "desc": "Accordi Wayfarer ottenuti",
+    "bronze": 50,
+    "silver": 500,
+    "gold": 1000,
+    "platinum": 1500
+  },
+  {
+    "id": "kalos",
+    "name": "Kalos",
+    "category": "Pokédex",
+    "desc": "Pokémon Kalos registrati",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 50,
+    "platinum": 72
+  },
+  {
+    "id": "alola",
+    "name": "Alola",
+    "category": "Pokédex",
+    "desc": "Pokémon Alola registrati",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 50,
+    "platinum": 86
+  },
+  {
+    "id": "galar",
+    "name": "Galar",
+    "category": "Pokédex",
+    "desc": "Pokémon Galar registrati",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 50,
+    "platinum": 89
+  },
+  {
+    "id": "hisui",
+    "name": "Hisui",
+    "category": "Pokédex",
+    "desc": "Pokémon Hisui registrati",
+    "bronze": 5,
+    "silver": 10,
+    "gold": 20,
+    "platinum": 30
+  },
+  {
+    "id": "triatleta",
+    "name": "Triatleta",
+    "category": "Attività",
+    "desc": "Serie di 7 giorni (catture o PokéStop)",
+    "bronze": 1,
+    "silver": 10,
+    "gold": 50,
+    "platinum": 100
+  },
+  {
+    "id": "stella_nascente",
+    "name": "Stella nascente",
+    "category": "Battaglia",
+    "desc": "Specie diverse sconfitte in raid",
+    "bronze": 2,
+    "silver": 10,
+    "gold": 50,
+    "platinum": 150
+  },
+  {
+    "id": "duo_stella",
+    "name": "Duo Stella nascente",
+    "category": "Battaglia",
+    "desc": "Raid vinti con un amico",
+    "bronze": 10,
+    "silver": 100,
+    "gold": 1000,
+    "platinum": 2000
+  },
+  {
+    "id": "picnic",
+    "name": "Picnic",
+    "category": "Sociale",
+    "desc": "Pokémon catturati con modulo esca condiviso",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 500,
+    "platinum": 2500
+  },
+  {
+    "id": "successore",
+    "name": "Successore",
+    "category": "Megaevoluzione",
+    "desc": "Megaevoluzioni effettuate",
+    "bronze": 1,
+    "silver": 50,
+    "gold": 500,
+    "platinum": 1000
+  },
+  {
+    "id": "guru_mega",
+    "name": "Guru Megaevoluzione",
+    "category": "Megaevoluzione",
+    "desc": "Specie diverse megaevolute",
+    "bronze": 1,
+    "silver": 24,
+    "gold": 36,
+    "platinum": 46
+  },
+  {
+    "id": "trova_amici",
+    "name": "Trova amici",
+    "category": "Sociale",
+    "desc": "Allenatori invitati",
+    "bronze": 1,
+    "silver": 10,
+    "gold": 20,
+    "platinum": 50
+  },
+  {
+    "id": "esperto_raid",
+    "name": "Esperto Raid",
+    "category": "Battaglia",
+    "desc": "Volte in classifica achievement raid",
+    "bronze": 1,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 500
+  },
+  {
+    "id": "collez_minusc",
+    "name": "Collez. Pokémon minuscoli",
+    "category": "Attività",
+    "desc": "Pokémon XXS catturati",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 100,
+    "platinum": 500
+  },
+  {
+    "id": "collez_enormi",
+    "name": "Collez. Pokémon enormi",
+    "category": "Attività",
+    "desc": "Pokémon XXL catturati",
+    "bronze": 5,
+    "silver": 25,
+    "gold": 100,
+    "platinum": 500
+  },
+  {
+    "id": "paldea",
+    "name": "Paldea",
+    "category": "Pokédex",
+    "desc": "Pokémon Paldea registrati",
+    "bronze": 5,
+    "silver": 30,
+    "gold": 80,
+    "platinum": 103
+  },
+  {
+    "id": "vivillon",
+    "name": "Collezionista Vivillon",
+    "category": "Speciale",
+    "desc": "Motivi Vivillon collezionati",
+    "bronze": 1,
+    "silver": 5,
+    "gold": 10,
+    "platinum": 18
+  },
+  {
+    "id": "stella_vetrina",
+    "name": "Stella Vetrina",
+    "category": "Attività",
+    "desc": "Vetrine PokéStop vinte",
+    "bronze": 1,
+    "silver": 10,
+    "gold": 50,
+    "platinum": 100
+  },
+  {
+    "id": "esploratore_esperto",
+    "name": "Esploratore esperto",
+    "category": "Esplorazione",
+    "desc": "Percorsi (Routes) completati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 600
+  },
+  {
+    "id": "membro_community",
+    "name": "Membro della community",
+    "category": "Sociale",
+    "desc": "Check-in a eventi Campfire",
+    "bronze": 1,
+    "silver": 20,
+    "gold": 50,
+    "platinum": 100
+  },
+  {
+    "id": "anima_festa",
+    "name": "Anima della festa",
+    "category": "Sociale",
+    "desc": "Sfide di gruppo (Party Play) completate",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 100,
+    "platinum": 200
+  },
+  {
+    "id": "studente",
+    "name": "Studente",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Normale catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "cintura_nera",
+    "name": "Cintura Nera",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Lotta catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "avicoltore",
+    "name": "Avicoltore",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Volante catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "punk",
+    "name": "Punk",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Veleno catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "archeologo",
+    "name": "Archeologo",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Terra catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "alpinista",
+    "name": "Alpinista",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Roccia catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "cacciabug",
+    "name": "Cacciabug",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Coleottero catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "stregone",
+    "name": "Stregone",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Spettro catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "spedizioniere",
+    "name": "Spedizioniere",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Acciaio catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "accendino",
+    "name": "Accendino",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Fuoco catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "nuotatore",
+    "name": "Nuotatore",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Acqua catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "giardiniere",
+    "name": "Giardiniere",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Erba catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "chitarrista",
+    "name": "Chitarrista",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Elettro catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "sensitivo",
+    "name": "Sensitivo",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Psico catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "sciatore",
+    "name": "Sciatore",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Ghiaccio catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "domatore",
+    "name": "Domatore",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Drago catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "fata",
+    "name": "Fata",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Folletto catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  },
+  {
+    "id": "delinquente",
+    "name": "Delinquente",
+    "category": "Tipo",
+    "desc": "Pokémon tipo Buio catturati",
+    "bronze": 10,
+    "silver": 50,
+    "gold": 200,
+    "platinum": 2500
+  }
+];

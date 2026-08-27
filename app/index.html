@@ -107,13 +107,15 @@
       <section id="section-medals" class="section">
         <header class="section-header">
           <h2>Medaglie</h2>
-          <p>Tier e % verso il prossimo livello calcolati automaticamente</p>
+          <p>72 medaglie ufficiali. Clicca su una medaglia per vedere il grafico dell'andamento.</p>
         </header>
+        <div class="medals-toolbar" id="medals-toolbar"></div>
         <div class="table-wrap">
           <table class="data-table" id="medals-table">
             <thead>
               <tr>
                 <th>Medaglia</th>
+                <th>Categoria</th>
                 <th>Descrizione</th>
                 <th class="manual">Progresso</th>
                 <th>Bronzo</th>
@@ -128,6 +130,32 @@
           </table>
         </div>
       </section>
+
+      <!-- Modale grafico medaglia -->
+      <div id="medal-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="medal-modal-backdrop"></div>
+        <div class="modal-panel" role="dialog" aria-labelledby="medal-modal-title">
+          <header class="modal-header">
+            <div>
+              <h3 id="medal-modal-title">Medaglia</h3>
+              <p id="medal-modal-desc" class="modal-subtitle"></p>
+            </div>
+            <button type="button" class="modal-close" id="medal-modal-close" aria-label="Chiudi">✕</button>
+          </header>
+          <div class="modal-stats" id="medal-modal-stats"></div>
+          <div class="chart-toolbar">
+            <span class="chart-toolbar-label">Periodo:</span>
+            <button type="button" class="chart-period-btn active" data-period="days">Giorni</button>
+            <button type="button" class="chart-period-btn" data-period="months">Mesi</button>
+            <button type="button" class="chart-period-btn" data-period="years">Anni</button>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="medal-chart" width="800" height="320"></canvas>
+            <p id="medal-chart-empty" class="chart-empty hidden">Nessun dato storico ancora. Modifica il progresso per iniziare a tracciare l'andamento.</p>
+          </div>
+          <p class="chart-legend" id="medal-chart-legend"></p>
+        </div>
+      </div>
 
       <!-- Battaglie -->
       <section id="section-battles" class="section">
@@ -165,6 +193,7 @@
     </main>
   </div>
 
+  <script src="medals.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

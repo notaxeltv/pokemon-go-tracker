@@ -18,41 +18,6 @@ const XP_TABLE = [
 
 const MAX_LEVEL = 80;
 
-const MEDALS = [
-  { name: "Studente", desc: "Tipo Normale", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Cintura Nera", desc: "Tipo Lotta", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Avicoltore", desc: "Tipo Volante", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Punk", desc: "Tipo Veleno", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Archeologo", desc: "Tipo Terra", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Alpinista", desc: "Tipo Roccia", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Cacciabug", desc: "Tipo Coleottero", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Stregone", desc: "Tipo Spettro", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Spedizioniere", desc: "Tipo Acciaio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Accendino", desc: "Tipo Fuoco", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Nuotatore", desc: "Tipo Acqua", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Giardiniere", desc: "Tipo Erba", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Chitarrista", desc: "Tipo Elettro", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Sensitivo", desc: "Tipo Psico", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Sciatore", desc: "Tipo Ghiaccio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Domatore", desc: "Tipo Drago", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Fata", desc: "Tipo Folletto", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Delinquente", desc: "Tipo Buio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Collezionista", desc: "Pokémon unici catturati", bronze: 30, silver: 500, gold: 2000, platinum: 50000 },
-  { name: "Podista", desc: "Km percorsi", bronze: 10, silver: 26.2, gold: 1000, platinum: 2500 },
-  { name: "Scienziato", desc: "Evoluzioni", bronze: 3, silver: 20, gold: 200, platinum: 2500 },
-  { name: "Allevatore", desc: "Uova schiuse", bronze: 10, silver: 100, gold: 500, platinum: 2500 },
-  { name: "Combattente", desc: "Battaglie in palestra vinte", bronze: 10, silver: 100, gold: 1000, platinum: 4000 },
-  { name: "Gentiluomo", desc: "Raid vinti", bronze: 10, silver: 100, gold: 1000, platinum: 2500 },
-  { name: "Idolo", desc: "Raid leggendari vinti", bronze: 2, silver: 10, gold: 50, platinum: 100 },
-  { name: "Campione", desc: "Raid leggendari vinti", bronze: 10, silver: 100, gold: 250, platinum: 1000 },
-  { name: "Esperto Bacche", desc: "Bacche date", bronze: 10, silver: 100, gold: 1000, platinum: 15000 },
-  { name: "Gamer", desc: "Curveball", bronze: 1000, silver: 100000, gold: 1000000, platinum: 2000000 },
-  { name: "Fotografo", desc: "Foto scattate", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Giovanotto", desc: "Pokémon minuscoli", bronze: 3, silver: 50, gold: 300, platinum: 1000 },
-  { name: "Pescatore", desc: "Pokémon enormi", bronze: 3, silver: 50, gold: 300, platinum: 1000 },
-  { name: "Asso", desc: "Sessioni di addestramento", bronze: 10, silver: 100, gold: 1000, platinum: 2000 },
-];
-
 const LEGENDARIES = [
   "Articuno", "Zapdos", "Moltres", "Mewtwo", "Raikou", "Entei", "Suicune",
   "Lugia", "Ho-Oh", "Regirock", "Regice", "Registeel", "Latias", "Latios",
@@ -67,10 +32,15 @@ const LEGENDARIES = [
 
 let state = null;
 let saveTimer = null;
+let medalFilter = "all";
+let activeMedalId = null;
+let chartPeriod = "days";
+
+const MEDAL_CATEGORIES = ["all", ...new Set(MEDALS.map((m) => m.category))];
 
 function defaultState() {
   return {
-    version: 1,
+    version: 2,
     resources: {
       stardust: 0,
       stardustPowder: 0,
@@ -82,7 +52,8 @@ function defaultState() {
       Object.keys(GEN_TOTALS).map((g) => [g, { caught: 0, seen: 0 }])
     ),
     shiny: [],
-    medals: MEDALS.map((m) => ({ progress: 0 })),
+    medals: Object.fromEntries(MEDALS.map((m) => [m.id, { progress: 0 }])),
+    medalHistory: {},
     battles: {
       raid: { wins: 0, losses: 0 },
       gbl: { wins: 0, losses: 0 },
@@ -200,10 +171,23 @@ function mergeState(base, incoming) {
     }
   }
   if (Array.isArray(incoming.shiny)) merged.shiny = incoming.shiny;
-  if (Array.isArray(incoming.medals)) {
-    incoming.medals.forEach((m, i) => {
-      if (merged.medals[i]) merged.medals[i].progress = m.progress ?? 0;
-    });
+  if (incoming.medals) {
+    const progressById = {};
+    if (Array.isArray(incoming.medals)) {
+      incoming.medals.forEach((m, i) => {
+        const id = m.id || MEDALS[i]?.id;
+        if (id) progressById[id] = m.progress ?? 0;
+      });
+    } else {
+      Object.entries(incoming.medals).forEach(([id, val]) => {
+        progressById[id] = typeof val === "object" ? (val.progress ?? 0) : (val ?? 0);
+      });
+    }
+    for (const m of MEDALS) {
+      if (progressById[m.id] !== undefined) {
+        merged.medals[m.id].progress = progressById[m.id];
+      }
+    }
   }
   if (incoming.battles) {
     Object.assign(merged.battles.raid, incoming.battles.raid || {});
@@ -215,7 +199,43 @@ function mergeState(base, incoming) {
       if (merged.legendaries[i]) Object.assign(merged.legendaries[i], leg);
     });
   }
+  if (incoming.medalHistory) {
+    merged.medalHistory = { ...merged.medalHistory, ...incoming.medalHistory };
+  }
   return merged;
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function recordMedalHistory(id, progress, mutateState = true) {
+  const today = todayISO();
+  const target = mutateState ? state : null;
+  if (mutateState) {
+    if (!state.medalHistory[id]) state.medalHistory[id] = [];
+    const hist = state.medalHistory[id];
+    const last = hist[hist.length - 1];
+    if (last && last.date === today) {
+      last.progress = progress;
+    } else if (!last || last.progress !== progress) {
+      hist.push({ date: today, progress });
+    }
+    return hist;
+  }
+  return [];
+}
+
+function seedMedalHistory() {
+  let changed = false;
+  for (const m of MEDALS) {
+    const progress = state.medals[m.id]?.progress ?? 0;
+    if (progress > 0 && (!state.medalHistory[m.id] || state.medalHistory[m.id].length === 0)) {
+      recordMedalHistory(m.id, progress);
+      changed = true;
+    }
+  }
+  if (changed) saveState();
 }
 
 function saveState() {
@@ -281,6 +301,9 @@ function renderDashboard() {
   const shinyCount = state.shiny.filter((s) => s.pokemon && s.pokemon.trim()).length;
   const legCaught = state.legendaries.filter((l) => l.caught).length;
   const legShiny = state.legendaries.filter((l) => l.shiny).length;
+  const platinumMedals = MEDALS.filter(
+    (m) => calcMedalTier(state.medals[m.id]?.progress ?? 0, m) === "Platino"
+  ).length;
 
   const cards = [
     { label: "Stardust", value: fmtNum(state.resources.stardust) },
@@ -295,6 +318,7 @@ function renderDashboard() {
     { label: "GBL Win Rate", value: fmtPct(gblWr) },
     { label: "Leggendari Catturati", value: `${legCaught} / ${LEGENDARIES.length}`, accent: true },
     { label: "Leggendari Shiny", value: legShiny, warning: true },
+    { label: "Medaglie Platino", value: `${platinumMedals} / ${MEDALS.length}`, success: true },
   ];
 
   document.getElementById("dashboard-cards").innerHTML = cards
@@ -444,16 +468,35 @@ function renderResources() {
 }
 
 function renderMedals() {
+  const toolbar = document.getElementById("medals-toolbar");
+  toolbar.innerHTML = MEDAL_CATEGORIES.map((cat) => {
+    const label = cat === "all" ? "Tutte" : cat;
+    const count = cat === "all" ? MEDALS.length : MEDALS.filter((m) => m.category === cat).length;
+    return `<button class="medal-filter-btn${medalFilter === cat ? " active" : ""}" data-cat="${cat}">${label} (${count})</button>`;
+  }).join("");
+
+  toolbar.querySelectorAll(".medal-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      medalFilter = btn.dataset.cat;
+      renderMedals();
+    });
+  });
+
+  const filtered = medalFilter === "all"
+    ? MEDALS
+    : MEDALS.filter((m) => m.category === medalFilter);
+
   const body = document.getElementById("medals-body");
-  body.innerHTML = MEDALS.map((m, i) => {
-    const progress = state.medals[i].progress;
+  body.innerHTML = filtered.map((m) => {
+    const progress = state.medals[m.id]?.progress ?? 0;
     const tier = calcMedalTier(progress, m);
     const pct = calcMedalProgress(progress, m);
     return `
       <tr>
-        <td>${m.name}</td>
+        <td><button type="button" class="medal-link" data-id="${m.id}" title="Apri grafico">${m.name}</button></td>
+        <td><span class="category-tag">${m.category}</span></td>
         <td style="color:var(--text-secondary)">${m.desc}</td>
-        <td><input type="number" class="table-input" min="0" step="any" value="${progress}" data-idx="${i}"></td>
+        <td><input type="number" class="table-input" min="0" step="any" value="${progress}" data-id="${m.id}"></td>
         <td>${fmtNum(m.bronze)}</td>
         <td>${fmtNum(m.silver)}</td>
         <td>${fmtNum(m.gold)}</td>
@@ -465,11 +508,228 @@ function renderMedals() {
 
   body.querySelectorAll("input").forEach((input) => {
     input.addEventListener("change", () => {
-      const idx = parseInt(input.dataset.idx, 10);
+      const id = input.dataset.id;
+      const val = Math.max(0, parseFloat(input.value) || 0);
       updateState((s) => {
-        s.medals[idx].progress = Math.max(0, parseFloat(input.value) || 0);
+        s.medals[id].progress = val;
+        recordMedalHistory(id, val);
       });
     });
+  });
+
+  body.querySelectorAll(".medal-link").forEach((btn) => {
+    btn.addEventListener("click", () => openMedalModal(btn.dataset.id));
+  });
+}
+
+/* ── Grafico medaglie ── */
+
+function aggregateMedalHistory(history, period) {
+  if (!history || history.length === 0) return [];
+  const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date));
+
+  if (period === "days") return sorted;
+
+  const buckets = new Map();
+  for (const point of sorted) {
+    const key = period === "months" ? point.date.slice(0, 7) : point.date.slice(0, 4);
+    buckets.set(key, point.progress);
+  }
+  return Array.from(buckets.entries()).map(([key, progress]) => ({
+    date: period === "months" ? `${key}-01` : `${key}-01-01`,
+    label: period === "months"
+      ? new Date(`${key}-01`).toLocaleDateString("it-IT", { month: "short", year: "numeric" })
+      : key,
+    progress,
+  }));
+}
+
+function formatChartLabel(point, period) {
+  if (point.label) return point.label;
+  const d = new Date(point.date + "T12:00:00");
+  if (period === "days") {
+    return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
+  }
+  return point.date;
+}
+
+function drawMedalChart(medal, period) {
+  const canvas = document.getElementById("medal-chart");
+  const emptyEl = document.getElementById("medal-chart-empty");
+  const history = state.medalHistory[medal.id] || [];
+  const data = aggregateMedalHistory(history, period);
+
+  if (data.length === 0) {
+    canvas.classList.add("hidden");
+    emptyEl.classList.remove("hidden");
+    return;
+  }
+
+  canvas.classList.remove("hidden");
+  emptyEl.classList.add("hidden");
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const width = Math.max(320, rect.width - 32);
+  const height = 300;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const pad = { top: 24, right: 20, bottom: 44, left: 56 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+
+  const maxProgress = Math.max(medal.platinum, ...data.map((d) => d.progress)) * 1.08;
+  const minProgress = 0;
+
+  const xAt = (i) => pad.left + (data.length === 1 ? chartW / 2 : (i / (data.length - 1)) * chartW);
+  const yAt = (v) => pad.top + chartH - ((v - minProgress) / (maxProgress - minProgress)) * chartH;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#1a1d27";
+  ctx.fillRect(0, 0, width, height);
+
+  const tiers = [
+    { v: medal.bronze, color: "rgba(205,127,50,0.35)", label: "Bronzo" },
+    { v: medal.silver, color: "rgba(207,216,220,0.25)", label: "Argento" },
+    { v: medal.gold, color: "rgba(255,213,79,0.2)", label: "Oro" },
+    { v: medal.platinum, color: "rgba(184,197,255,0.2)", label: "Platino" },
+  ];
+
+  tiers.forEach((t) => {
+    const y = yAt(t.v);
+    ctx.strokeStyle = t.color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(width - pad.right, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  ctx.strokeStyle = "#363b4a";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top);
+  ctx.lineTo(pad.left, pad.top + chartH);
+  ctx.lineTo(pad.left + chartW, pad.top + chartH);
+  ctx.stroke();
+
+  ctx.fillStyle = "#9aa0b0";
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.textAlign = "right";
+  for (let i = 0; i <= 4; i++) {
+    const val = minProgress + ((maxProgress - minProgress) * i) / 4;
+    const y = yAt(val);
+    ctx.fillText(fmtNum(Math.round(val)), pad.left - 8, y + 4);
+    ctx.strokeStyle = "rgba(54,59,74,0.5)";
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(pad.left + chartW, y);
+    ctx.stroke();
+  }
+
+  if (data.length > 1) {
+    ctx.strokeStyle = "#5b8def";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    data.forEach((point, i) => {
+      const x = xAt(i);
+      const y = yAt(point.progress);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  data.forEach((point, i) => {
+    const x = xAt(i);
+    const y = yAt(point.progress);
+    ctx.fillStyle = "#5b8def";
+    ctx.beginPath();
+    ctx.arc(x, y, data.length === 1 ? 6 : 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#9aa0b0";
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(formatChartLabel(point, period), x, height - 16);
+  });
+
+  const delta = data.length >= 2 ? data[data.length - 1].progress - data[0].progress : 0;
+  const legend = document.getElementById("medal-chart-legend");
+  legend.innerHTML = `
+    <span class="legend-item"><span class="legend-swatch progress"></span> Progresso</span>
+    <span class="legend-item"><span class="legend-swatch bronze"></span> Bronzo (${fmtNum(medal.bronze)})</span>
+    <span class="legend-item"><span class="legend-swatch silver"></span> Argento (${fmtNum(medal.silver)})</span>
+    <span class="legend-item"><span class="legend-swatch gold"></span> Oro (${fmtNum(medal.gold)})</span>
+    <span class="legend-item"><span class="legend-swatch platinum"></span> Platino (${fmtNum(medal.platinum)})</span>
+    ${data.length >= 2 ? `<span>Δ periodo: ${delta >= 0 ? "+" : ""}${fmtNum(delta)}</span>` : ""}`;
+}
+
+function openMedalModal(medalId) {
+  const medal = MEDALS.find((m) => m.id === medalId);
+  if (!medal) return;
+
+  activeMedalId = medalId;
+  chartPeriod = "days";
+
+  const progress = state.medals[medalId]?.progress ?? 0;
+  const tier = calcMedalTier(progress, medal);
+  const pct = calcMedalProgress(progress, medal);
+  const hist = state.medalHistory[medalId] || [];
+
+  document.getElementById("medal-modal-title").textContent = medal.name;
+  document.getElementById("medal-modal-desc").textContent = `${medal.category} · ${medal.desc}`;
+  document.getElementById("medal-modal-stats").innerHTML = `
+    <div class="modal-stat"><div class="modal-stat-label">Progresso</div><div class="modal-stat-value">${fmtNum(progress)}</div></div>
+    <div class="modal-stat"><div class="modal-stat-label">Tier</div><div class="modal-stat-value ${tierClass(tier)}">${tier}</div></div>
+    <div class="modal-stat"><div class="modal-stat-label">% Prossimo</div><div class="modal-stat-value">${tier === "Platino" ? "100%" : fmtPct(pct)}</div></div>
+    <div class="modal-stat"><div class="modal-stat-label">Rilevazioni</div><div class="modal-stat-value">${hist.length}</div></div>`;
+
+  document.querySelectorAll(".chart-period-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.period === chartPeriod);
+  });
+
+  const modal = document.getElementById("medal-modal");
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+
+  requestAnimationFrame(() => drawMedalChart(medal, chartPeriod));
+}
+
+function closeMedalModal() {
+  const modal = document.getElementById("medal-modal");
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+  activeMedalId = null;
+}
+
+function initMedalModal() {
+  document.getElementById("medal-modal-close").addEventListener("click", closeMedalModal);
+  document.getElementById("medal-modal-backdrop").addEventListener("click", closeMedalModal);
+  document.querySelectorAll(".chart-period-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      chartPeriod = btn.dataset.period;
+      document.querySelectorAll(".chart-period-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.period === chartPeriod);
+      });
+      const medal = MEDALS.find((m) => m.id === activeMedalId);
+      if (medal) drawMedalChart(medal, chartPeriod);
+    });
+  });
+  window.addEventListener("resize", () => {
+    if (!activeMedalId) return;
+    const medal = MEDALS.find((m) => m.id === activeMedalId);
+    if (medal) drawMedalChart(medal, chartPeriod);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && activeMedalId) closeMedalModal();
   });
 }
 
@@ -625,7 +885,9 @@ function importData(file) {
 
 function init() {
   state = loadState();
+  seedMedalHistory();
   initNav();
+  initMedalModal();
   renderAll();
 
   document.getElementById("btn-add-shiny").addEventListener("click", () => {
