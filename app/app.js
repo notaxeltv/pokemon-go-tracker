@@ -18,41 +18,6 @@ const XP_TABLE = [
 
 const MAX_LEVEL = 80;
 
-const MEDALS = [
-  { name: "Studente", desc: "Tipo Normale", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Cintura Nera", desc: "Tipo Lotta", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Avicoltore", desc: "Tipo Volante", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Punk", desc: "Tipo Veleno", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Archeologo", desc: "Tipo Terra", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Alpinista", desc: "Tipo Roccia", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Cacciabug", desc: "Tipo Coleottero", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Stregone", desc: "Tipo Spettro", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Spedizioniere", desc: "Tipo Acciaio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Accendino", desc: "Tipo Fuoco", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Nuotatore", desc: "Tipo Acqua", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Giardiniere", desc: "Tipo Erba", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Chitarrista", desc: "Tipo Elettro", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Sensitivo", desc: "Tipo Psico", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Sciatore", desc: "Tipo Ghiaccio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Domatore", desc: "Tipo Drago", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Fata", desc: "Tipo Folletto", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Delinquente", desc: "Tipo Buio", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Collezionista", desc: "Pokémon unici catturati", bronze: 30, silver: 500, gold: 2000, platinum: 50000 },
-  { name: "Podista", desc: "Km percorsi", bronze: 10, silver: 26.2, gold: 1000, platinum: 2500 },
-  { name: "Scienziato", desc: "Evoluzioni", bronze: 3, silver: 20, gold: 200, platinum: 2500 },
-  { name: "Allevatore", desc: "Uova schiuse", bronze: 10, silver: 100, gold: 500, platinum: 2500 },
-  { name: "Combattente", desc: "Battaglie in palestra vinte", bronze: 10, silver: 100, gold: 1000, platinum: 4000 },
-  { name: "Gentiluomo", desc: "Raid vinti", bronze: 10, silver: 100, gold: 1000, platinum: 2500 },
-  { name: "Idolo", desc: "Raid leggendari vinti", bronze: 2, silver: 10, gold: 50, platinum: 100 },
-  { name: "Campione", desc: "Raid leggendari vinti", bronze: 10, silver: 100, gold: 250, platinum: 1000 },
-  { name: "Esperto Bacche", desc: "Bacche date", bronze: 10, silver: 100, gold: 1000, platinum: 15000 },
-  { name: "Gamer", desc: "Curveball", bronze: 1000, silver: 100000, gold: 1000000, platinum: 2000000 },
-  { name: "Fotografo", desc: "Foto scattate", bronze: 10, silver: 50, gold: 200, platinum: 2500 },
-  { name: "Giovanotto", desc: "Pokémon minuscoli", bronze: 3, silver: 50, gold: 300, platinum: 1000 },
-  { name: "Pescatore", desc: "Pokémon enormi", bronze: 3, silver: 50, gold: 300, platinum: 1000 },
-  { name: "Asso", desc: "Sessioni di addestramento", bronze: 10, silver: 100, gold: 1000, platinum: 2000 },
-];
-
 const LEGENDARIES = [
   "Articuno", "Zapdos", "Moltres", "Mewtwo", "Raikou", "Entei", "Suicune",
   "Lugia", "Ho-Oh", "Regirock", "Regice", "Registeel", "Latias", "Latios",
@@ -67,10 +32,13 @@ const LEGENDARIES = [
 
 let state = null;
 let saveTimer = null;
+let medalFilter = "all";
+
+const MEDAL_CATEGORIES = ["all", ...new Set(MEDALS.map((m) => m.category))];
 
 function defaultState() {
   return {
-    version: 1,
+    version: 2,
     resources: {
       stardust: 0,
       stardustPowder: 0,
@@ -82,7 +50,7 @@ function defaultState() {
       Object.keys(GEN_TOTALS).map((g) => [g, { caught: 0, seen: 0 }])
     ),
     shiny: [],
-    medals: MEDALS.map((m) => ({ progress: 0 })),
+    medals: Object.fromEntries(MEDALS.map((m) => [m.id, { progress: 0 }])),
     battles: {
       raid: { wins: 0, losses: 0 },
       gbl: { wins: 0, losses: 0 },
@@ -200,10 +168,23 @@ function mergeState(base, incoming) {
     }
   }
   if (Array.isArray(incoming.shiny)) merged.shiny = incoming.shiny;
-  if (Array.isArray(incoming.medals)) {
-    incoming.medals.forEach((m, i) => {
-      if (merged.medals[i]) merged.medals[i].progress = m.progress ?? 0;
-    });
+  if (incoming.medals) {
+    const progressById = {};
+    if (Array.isArray(incoming.medals)) {
+      incoming.medals.forEach((m, i) => {
+        const id = m.id || MEDALS[i]?.id;
+        if (id) progressById[id] = m.progress ?? 0;
+      });
+    } else {
+      Object.entries(incoming.medals).forEach(([id, val]) => {
+        progressById[id] = typeof val === "object" ? (val.progress ?? 0) : (val ?? 0);
+      });
+    }
+    for (const m of MEDALS) {
+      if (progressById[m.id] !== undefined) {
+        merged.medals[m.id].progress = progressById[m.id];
+      }
+    }
   }
   if (incoming.battles) {
     Object.assign(merged.battles.raid, incoming.battles.raid || {});
@@ -281,6 +262,9 @@ function renderDashboard() {
   const shinyCount = state.shiny.filter((s) => s.pokemon && s.pokemon.trim()).length;
   const legCaught = state.legendaries.filter((l) => l.caught).length;
   const legShiny = state.legendaries.filter((l) => l.shiny).length;
+  const platinumMedals = MEDALS.filter(
+    (m) => calcMedalTier(state.medals[m.id]?.progress ?? 0, m) === "Platino"
+  ).length;
 
   const cards = [
     { label: "Stardust", value: fmtNum(state.resources.stardust) },
@@ -295,6 +279,7 @@ function renderDashboard() {
     { label: "GBL Win Rate", value: fmtPct(gblWr) },
     { label: "Leggendari Catturati", value: `${legCaught} / ${LEGENDARIES.length}`, accent: true },
     { label: "Leggendari Shiny", value: legShiny, warning: true },
+    { label: "Medaglie Platino", value: `${platinumMedals} / ${MEDALS.length}`, success: true },
   ];
 
   document.getElementById("dashboard-cards").innerHTML = cards
@@ -444,16 +429,35 @@ function renderResources() {
 }
 
 function renderMedals() {
+  const toolbar = document.getElementById("medals-toolbar");
+  toolbar.innerHTML = MEDAL_CATEGORIES.map((cat) => {
+    const label = cat === "all" ? "Tutte" : cat;
+    const count = cat === "all" ? MEDALS.length : MEDALS.filter((m) => m.category === cat).length;
+    return `<button class="medal-filter-btn${medalFilter === cat ? " active" : ""}" data-cat="${cat}">${label} (${count})</button>`;
+  }).join("");
+
+  toolbar.querySelectorAll(".medal-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      medalFilter = btn.dataset.cat;
+      renderMedals();
+    });
+  });
+
+  const filtered = medalFilter === "all"
+    ? MEDALS
+    : MEDALS.filter((m) => m.category === medalFilter);
+
   const body = document.getElementById("medals-body");
-  body.innerHTML = MEDALS.map((m, i) => {
-    const progress = state.medals[i].progress;
+  body.innerHTML = filtered.map((m) => {
+    const progress = state.medals[m.id]?.progress ?? 0;
     const tier = calcMedalTier(progress, m);
     const pct = calcMedalProgress(progress, m);
     return `
       <tr>
         <td>${m.name}</td>
+        <td><span class="category-tag">${m.category}</span></td>
         <td style="color:var(--text-secondary)">${m.desc}</td>
-        <td><input type="number" class="table-input" min="0" step="any" value="${progress}" data-idx="${i}"></td>
+        <td><input type="number" class="table-input" min="0" step="any" value="${progress}" data-id="${m.id}"></td>
         <td>${fmtNum(m.bronze)}</td>
         <td>${fmtNum(m.silver)}</td>
         <td>${fmtNum(m.gold)}</td>
@@ -465,9 +469,9 @@ function renderMedals() {
 
   body.querySelectorAll("input").forEach((input) => {
     input.addEventListener("change", () => {
-      const idx = parseInt(input.dataset.idx, 10);
+      const id = input.dataset.id;
       updateState((s) => {
-        s.medals[idx].progress = Math.max(0, parseFloat(input.value) || 0);
+        s.medals[id].progress = Math.max(0, parseFloat(input.value) || 0);
       });
     });
   });

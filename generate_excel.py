@@ -4,6 +4,9 @@ Genera PokemonGO_Tracker.xlsx — tracker manuale con calcoli automatici.
 Celle gialle = input manuale | Celle verdi = formule
 """
 
+import json
+from pathlib import Path
+
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -39,40 +42,24 @@ XP_TABLE = [
 MAX_LEVEL = 80
 XP_SHEET_END_ROW = 3 + MAX_LEVEL  # riga 83 per livello 80
 
-MEDALS = [
-    ("Studente", "Tipo Normale", 10, 50, 200, 2500),
-    ("Cintura Nera", "Tipo Lotta", 10, 50, 200, 2500),
-    ("Avicoltore", "Tipo Volante", 10, 50, 200, 2500),
-    ("Punk", "Tipo Veleno", 10, 50, 200, 2500),
-    ("Archeologo", "Tipo Terra", 10, 50, 200, 2500),
-    ("Alpinista", "Tipo Roccia", 10, 50, 200, 2500),
-    ("Cacciabug", "Tipo Coleottero", 10, 50, 200, 2500),
-    ("Stregone", "Tipo Spettro", 10, 50, 200, 2500),
-    ("Spedizioniere", "Tipo Acciaio", 10, 50, 200, 2500),
-    ("Accendino", "Tipo Fuoco", 10, 50, 200, 2500),
-    ("Nuotatore", "Tipo Acqua", 10, 50, 200, 2500),
-    ("Giardiniere", "Tipo Erba", 10, 50, 200, 2500),
-    ("Chitarrista", "Tipo Elettro", 10, 50, 200, 2500),
-    ("Sensitivo", "Tipo Psico", 10, 50, 200, 2500),
-    ("Sciatore", "Tipo Ghiaccio", 10, 50, 200, 2500),
-    ("Domatore", "Tipo Drago", 10, 50, 200, 2500),
-    ("Fata", "Tipo Folletto", 10, 50, 200, 2500),
-    ("Delinquente", "Tipo Buio", 10, 50, 200, 2500),
-    ("Collezionista", "Pokémon unici catturati", 30, 500, 2000, 50000),
-    ("Podista", "Km percorsi", 10, 26.2, 1000, 2500),
-    ("Scienziato", "Evoluzioni", 3, 20, 200, 2500),
-    ("Allevatore", "Uova schiuse", 10, 100, 500, 2500),
-    ("Combattente", "Battaglie in palestra vinte", 10, 100, 1000, 4000),
-    ("Gentiluomo", "Raid vinti", 10, 100, 1000, 2500),
-    ("Idolo", "Raid leggendari vinti", 2, 10, 50, 100),
-    ("Campione", "Raid leggendari vinti", 10, 100, 250, 1000),
-    ("Esperto Bacche", "Bacche date", 10, 100, 1000, 15000),
-    ("Gamer", "Curveball", 1000, 100000, 1000000, 2000000),
-    ("Fotografo", "Foto scattate", 10, 50, 200, 2500),
-    ("Giovanotto", "Pokémon minuscoli", 3, 50, 300, 1000),
-    ("Pescatore", "Pokémon enormi", 3, 50, 300, 1000),
-    ("Asso", "Sessioni di addestramento", 10, 100, 1000, 2000),
-]
+MEDALS_PATH = Path(__file__).parent / "medals.json"
+
+
+def load_medals():
+    with open(MEDALS_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_medals_js(medals):
+    out = Path(__file__).parent / "app" / "medals.js"
+    out.write_text(
+        "// Generato da generate_excel.py — non modificare manualmente\n"
+        f"const MEDALS = {json.dumps(medals, ensure_ascii=False, indent=2)};\n",
+        encoding="utf-8",
+    )
+
+
+MEDALS = load_medals()
 
 LEGENDARIES = [
     "Articuno", "Zapdos", "Moltres", "Mewtwo", "Raikou", "Entei", "Suicune",
@@ -185,41 +172,46 @@ def build_medals_sheet(wb):
     ws = wb.create_sheet("Medaglie")
     ws["A1"] = "Progresso Medaglie"
     ws["A1"].font = TITLE_FONT
-    ws["A2"] = "Inserisci il progresso attuale. Tier e % verso il prossimo livello sono automatici."
-    set_header_row(ws, 4, ["Medaglia", "Descrizione", "Progresso", "Bronzo", "Argento", "Oro", "Platino", "Tier", "% Prossimo"])
+    ws["A2"] = "Inserisci il progresso attuale (colonna D). Tier e % verso il prossimo livello sono automatici."
+    set_header_row(ws, 4, [
+        "Medaglia", "Categoria", "Descrizione", "Progresso",
+        "Bronzo", "Argento", "Oro", "Platino", "Tier", "% Prossimo",
+    ])
     start = 5
-    for i, (name, desc, br, si, go, pl) in enumerate(MEDALS):
+    for i, m in enumerate(MEDALS):
         r = start + i
-        ws.cell(r, 1, name)
-        ws.cell(r, 2, desc)
-        ws.cell(r, 3, 0)
-        ws.cell(r, 4, br)
-        ws.cell(r, 5, si)
-        ws.cell(r, 6, go)
-        ws.cell(r, 7, pl)
+        ws.cell(r, 1, m["name"])
+        ws.cell(r, 2, m["category"])
+        ws.cell(r, 3, m["desc"])
+        ws.cell(r, 4, 0)
+        ws.cell(r, 5, m["bronze"])
+        ws.cell(r, 6, m["silver"])
+        ws.cell(r, 7, m["gold"])
+        ws.cell(r, 8, m["platinum"])
         tier = (
-            f'=IF(C{r}>=G{r},"Platino",'
-            f'IF(C{r}>=F{r},"Oro",'
-            f'IF(C{r}>=E{r},"Argento",'
-            f'IF(C{r}>=D{r},"Bronzo","Nessuno"))))'
+            f'=IF(D{r}>=H{r},"Platino",'
+            f'IF(D{r}>=G{r},"Oro",'
+            f'IF(D{r}>=F{r},"Argento",'
+            f'IF(D{r}>=E{r},"Bronzo","Nessuno"))))'
         )
         pct = (
-            f'=IF(C{r}>=G{r},100,'
-            f'IF(C{r}>=F{r},IF(G{r}=F{r},100,(C{r}-F{r})/(G{r}-F{r})),'
-            f'IF(C{r}>=E{r},IF(F{r}=E{r},100,(C{r}-E{r})/(F{r}-E{r})),'
-            f'IF(C{r}>=D{r},IF(E{r}=D{r},100,(C{r}-D{r})/(E{r}-D{r})),'
-            f'IF(D{r}=0,0,C{r}/D{r})))))'
+            f'=IF(D{r}>=H{r},1,'
+            f'IF(D{r}>=G{r},IF(H{r}=G{r},1,(D{r}-G{r})/(H{r}-G{r})),'
+            f'IF(D{r}>=F{r},IF(G{r}=F{r},1,(D{r}-F{r})/(G{r}-F{r})),'
+            f'IF(D{r}>=E{r},IF(F{r}=E{r},1,(D{r}-E{r})/(F{r}-E{r})),'
+            f'IF(E{r}=0,0,D{r}/E{r})))))'
         )
-        ws.cell(r, 8, tier)
-        ws.cell(r, 9, pct)
+        ws.cell(r, 9, tier)
+        ws.cell(r, 10, pct)
         style_cell(ws.cell(r, 1), alignment=LEFT)
         style_cell(ws.cell(r, 2), alignment=LEFT)
-        style_cell(ws.cell(r, 3), YELLOW, alignment=CENTER, number_format="#,##0")
-        for col in (4, 5, 6, 7):
+        style_cell(ws.cell(r, 3), alignment=LEFT)
+        style_cell(ws.cell(r, 4), YELLOW, alignment=CENTER, number_format="#,##0.##")
+        for col in (5, 6, 7, 8):
             style_cell(ws.cell(r, col), GREEN, alignment=CENTER, number_format="#,##0.##")
-        style_cell(ws.cell(r, 8), GREEN, alignment=CENTER)
-        style_cell(ws.cell(r, 9), GREEN, alignment=CENTER, number_format="0.00%")
-    for col, w in zip("ABCDEFGHI", [16, 28, 12, 10, 10, 10, 10, 12, 12]):
+        style_cell(ws.cell(r, 9), GREEN, alignment=CENTER)
+        style_cell(ws.cell(r, 10), GREEN, alignment=CENTER, number_format="0.00%")
+    for col, w in zip("ABCDEFGHIJ", [18, 14, 32, 12, 10, 10, 10, 10, 12, 12]):
         ws.column_dimensions[col].width = w
 
 
@@ -390,7 +382,9 @@ def main():
     wb._sheets.sort(key=lambda s: order.index(s.title))
 
     wb.save(OUTPUT)
+    write_medals_js(MEDALS)
     print(f"Creato: {OUTPUT}")
+    print(f"Aggiornato: app/medals.js ({len(MEDALS)} medaglie)")
 
 
 if __name__ == "__main__":

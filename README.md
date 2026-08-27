@@ -73,13 +73,24 @@ Tabella di riferimento livelli 1–80 con XP cumulativo (solo lettura).
 > **Nota:** dall'aggiornamento di ottobre 2025 il cap è **livello 80**. I livelli 71–80 richiedono anche ricerche di salita di livello oltre all'XP necessario.
 
 #### Medaglie
-32 medaglie con soglie Bronzo/Argento/Oro/Platino.
+**69 medaglie** con soglie ufficiali Bronzo/Argento/Oro/Platino, organizzate per categoria:
+
+| Categoria | Esempi |
+|-----------|--------|
+| **Pokédex** | Kanto, Johto, Hoenn … Paldea |
+| **Tipo** | Studente, Accendino, Domatore … (18 tipi) |
+| **Attività** | Podista, Collezionista, Zaino, Turista … |
+| **Battaglia** | Campione, Leggenda delle lotte, Capopalestra, Veterano GBL … |
+| **Sociale** | Gentiluomo, Pilota, Migliori amici, Idolo … |
+| **Team GO Rocket** | Eroe, Ultra Eroe, Purificatore |
+| **Megaevoluzione** | Successore, Guru Megaevoluzione |
+| **Speciale** | Unown, Fan di Pikachu, Vivillon, Wayfarer … |
 
 **Manuale:** colonna Progresso.
 
-**Automatico:**
-- **Tier** — Nessuno → Bronzo → Argento → Oro → Platino
-- **% Prossimo** — progresso verso il tier successivo
+**Automatico:** Tier e % verso il prossimo livello.
+
+> L'elenco completo è in `medals.json` (fonte dati condivisa tra Excel e app).
 
 #### Battaglie
 - **Raid:** Vittorie, Sconfitte → Win Rate
