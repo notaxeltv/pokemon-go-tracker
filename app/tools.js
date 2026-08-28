@@ -33,6 +33,7 @@ function importPokeGenieCsv(text) {
   const iShiny = idx(["shiny"]);
 
   let imported = 0;
+  let skipped = 0;
   updateState((s) => {
     for (let li = 1; li < lines.length; li++) {
       const cols = parseCsvLine(lines[li]);
@@ -47,28 +48,28 @@ function importPokeGenieCsv(text) {
       const att = iAtt >= 0 ? cols[iAtt] : "";
       const def = iDef >= 0 ? cols[iDef] : "";
       const sta = iSta >= 0 ? cols[iSta] : "";
+      const cp = iCp >= 0 ? cols[iCp] : "";
       const iv = iIv >= 0 ? cols[iIv] : (att !== "" && def !== "" && sta !== "" ? calcIvPercent(att, def, sta) : "");
       if (isShiny) {
+        if (shinyExists(s, name, cp, att, def, sta)) { skipped++; imported++; continue; }
         const row = {
-          date: todayISO(), pokemon: name, cp: iCp >= 0 ? cols[iCp] : "",
+          date: todayISO(), pokemon: name, cp,
           att, def, sta, method: "Import CSV", notes: iv ? `IV ${iv}%` : "",
         };
-        if (!s.shiny.some((r) => r.pokemon?.toLowerCase() === name.toLowerCase() && r.date === row.date)) {
-          s.shiny.push(row);
-        }
+        s.shiny.push(row);
       }
       imported++;
     }
   }, { syncGen: true, recordGlobal: true });
-  return imported;
+  return { imported, skipped };
 }
 
 function importCsvFile(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
-      const n = importPokeGenieCsv(e.target.result);
-      alert(`Importati ${n} record dal CSV.`);
+      const { imported, skipped } = importPokeGenieCsv(e.target.result);
+      alert(`Importati ${imported} record dal CSV${skipped ? ` (${skipped} duplicati saltati)` : ""}.`);
     } catch (err) {
       alert("Errore CSV: " + err.message);
     }
@@ -96,8 +97,8 @@ async function importXlsxFile(file) {
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
     if (!rows.length) throw new Error("Foglio vuoto");
     const text = rows.map((r) => r.join(",")).join("\n");
-    const n = importPokeGenieCsv(text);
-    alert(`Importati ${n} righe dall'Excel.`);
+    const { imported, skipped } = importPokeGenieCsv(text);
+    alert(`Importati ${imported} righe dall'Excel${skipped ? ` (${skipped} duplicati saltati)` : ""}.`);
   } catch (err) {
     alert("Errore Excel: " + err.message);
   }
@@ -130,5 +131,24 @@ ${eta ? `<p><strong>Stima livello successivo:</strong> ~${eta.days} giorni (${fm
 
 function exportDataWithBackupMark() {
   exportData();
+  markBackupDone();
+}
+
+function exportCsvData() {
+  const rows = [
+    ["Data", "Pokémon", "CP", "Att", "Dif", "PS", "IV%", "Metodo", "Note"],
+    ...state.shiny.map((r) => [
+      r.date, r.pokemon, r.cp, r.att, r.def, r.sta,
+      calcIvPercent(r.att, r.def, r.sta) ?? "", r.method, r.notes,
+    ]),
+  ];
+  const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pokemon-go-shiny-${todayISO()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
   markBackupDone();
 }

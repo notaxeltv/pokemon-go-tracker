@@ -26,6 +26,8 @@
       <div class="account-bar">
         <select id="account-select" class="select-input" aria-label="Account"></select>
         <input type="text" id="account-name" class="select-input" placeholder="Nome allenatore">
+        <input type="search" id="global-search" class="search-input" placeholder="🔍 Cerca ovunque..." autocomplete="off">
+        <div id="global-search-results" class="global-search-results hidden"></div>
         <div class="account-actions">
           <button id="btn-new-account" class="btn btn-secondary btn-sm" title="Nuovo account">+</button>
           <button id="btn-delete-account" class="btn btn-secondary btn-sm" title="Elimina account">✕</button>
@@ -44,6 +46,7 @@
         <button class="nav-btn" data-section="rocket">👾 Rocket</button>
         <button class="nav-btn" data-section="mega">🔮 Mega</button>
         <button class="nav-btn" data-section="buddies">🐾 Buddy</button>
+        <button class="nav-btn" data-section="eggs">🥚 Uova</button>
         <button class="nav-btn" data-section="events">🎉 Eventi</button>
         <button class="nav-btn" data-section="quests">📜 Ricerche</button>
         <button class="nav-btn" data-section="legendaries">🌟 Leggendari</button>
@@ -51,6 +54,7 @@
       </nav>
       <div class="sidebar-footer">
         <button id="btn-export" class="btn btn-secondary">⬇ Backup JSON</button>
+        <button id="btn-export-csv" class="btn btn-secondary">⬇ Export CSV</button>
         <button id="btn-export-excel" class="btn btn-secondary">⬇ Sync Excel</button>
         <button id="btn-import" class="btn btn-secondary">⬆ Importa JSON</button>
         <button id="btn-import-csv" class="btn btn-secondary">⬆ Importa CSV</button>
@@ -69,6 +73,7 @@
       <section id="section-dashboard" class="section active">
         <header class="section-header"><h2>Dashboard</h2><p>Riepilogo, obiettivi e andamento</p></header>
         <div class="cards-grid" id="dashboard-cards"></div>
+        <div class="panel completion-panel" id="dashboard-completion"></div>
         <p id="dashboard-eta" class="summary-line"></p>
         <div class="dashboard-panels">
           <div class="panel"><h3>🎯 Prossimi obiettivi</h3><div id="dashboard-goals" class="goals-list"></div></div>
@@ -141,6 +146,7 @@
         <header class="section-header"><h2>Risorse & Livello</h2></header>
         <div class="form-grid" id="resources-form"></div>
         <div class="form-grid" id="inventory-form"></div>
+        <div class="panel" id="elite-tm-panel"></div>
         <div class="xp-progress-card" id="xp-progress"></div>
       </section>
 
@@ -196,6 +202,7 @@
         <header class="section-header"><h2>Battaglie</h2><p>Raid, GBL dettagliato e buddy</p></header>
         <div class="battles-grid" id="battles-grid"></div>
         <div class="panel" id="gbl-panel"></div>
+        <div class="panel" id="raid-bosses-panel"><h3>👹 Boss Raid</h3><div id="raid-bosses-grid" class="raid-bosses-grid"></div></div>
       </section>
 
       <section id="section-rocket" class="section">
@@ -223,16 +230,32 @@
         </tr></thead><tbody id="buddies-body"></tbody></table></div>
       </section>
 
+      <section id="section-eggs" class="section">
+        <header class="section-header"><h2>Uova</h2><p>Traccia uova in incubazione e schiusure</p></header>
+        <button id="btn-add-egg" class="btn btn-primary">+ Aggiungi uovo</button>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Distanza</th><th>Pokémon (previsto)</th><th>Incubatrice</th><th>Km percorsi</th><th>Stato</th><th>Inizio</th><th>Schiusa</th><th>Note</th><th></th>
+        </tr></thead><tbody id="eggs-body"></tbody></table></div>
+      </section>
+
       <section id="section-events" class="section">
         <header class="section-header"><h2>Eventi</h2></header>
+        <div class="tab-bar">
+          <button class="events-tab active" data-view="list">Lista</button>
+          <button class="events-tab" data-view="calendar">Calendario</button>
+        </div>
         <button id="btn-add-event" class="btn btn-primary">+ Aggiungi evento</button>
+        <div id="events-list-panel">
         <div class="table-wrap"><table class="data-table"><thead><tr>
-          <th>Data</th><th>Nome</th><th>Tipo</th><th>Pokémon</th><th>Shiny</th><th>Note</th><th></th>
+          <th>Inizio</th><th>Fine</th><th>Nome</th><th>Tipo</th><th>Pokémon</th><th>Shiny</th><th>Countdown</th><th>Note</th><th></th>
         </tr></thead><tbody id="events-body"></tbody></table></div>
+        </div>
+        <div id="events-calendar-panel" class="hidden"><div id="events-calendar" class="events-calendar"></div></div>
       </section>
 
       <section id="section-quests" class="section">
         <header class="section-header"><h2>Ricerche</h2></header>
+        <div class="panel breakthrough-panel" id="breakthrough-panel"></div>
         <button id="btn-add-quest" class="btn btn-primary">+ Aggiungi ricerca</button>
         <div class="table-wrap"><table class="data-table"><thead><tr>
           <th>Nome</th><th>Tipo</th><th>Stato</th><th>Inizio</th><th>Completata</th><th>Note</th><th></th>
@@ -253,6 +276,11 @@
             <h3>Calcolatore CP (stima)</h3>
             <div class="calc-form" id="cp-calc-form"></div>
             <p id="cp-calc-result" class="calc-result"></p>
+          </div>
+          <div class="panel">
+            <h3>Calcolatore IV PvP</h3>
+            <div class="calc-form" id="pvp-calc-form"></div>
+            <p id="pvp-calc-result" class="calc-result"></p>
           </div>
           <div class="panel">
             <h3>Confronto account</h3>
@@ -277,6 +305,7 @@
   <script src="medals.js"></script>
   <script src="core.js"></script>
   <script src="extras.js"></script>
+  <script src="features.js"></script>
   <script src="charts.js"></script>
   <script src="sync.js"></script>
   <script src="tools.js"></script>

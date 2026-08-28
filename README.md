@@ -14,7 +14,10 @@ Tracker completo per i progressi in **Pokémon GO** con inserimento manuale dei 
 ### App Web
 - **Dashboard** con riepilogo, obiettivi vicini, stima giorni al livello successivo e grafici storici (XP, Stardust, % Pokédex, raid)
 - **Mancanti** — Pokédex, shiny, leggendari shiny e medaglie vicine al platino
+- **Completamento globale** — barra progresso pesata (dex, medaglie, leggendari, shiny)
+- **Ricerca globale** — cerca Pokémon, medaglie, shiny ed eventi da un unico campo
 - **Pokédex** per generazione e **checklist 1025 specie** con filtri
+  - Filtro per **tipo** (Fuoco, Acqua, ecc.) e paginazione "Mostra altri"
   - Per ogni Pokémon: **come si ottiene**, **come evolve**, **boost meteo**, **debolezze/resistenze** e **contatori raid**
   - Auto-collegamento tra specie, shiny e leggendari
 - **Shiny**, **Vetrina** (migliori catture), **Risorse & Livello** (1–80) con inventario esteso

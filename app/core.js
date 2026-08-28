@@ -42,7 +42,7 @@ function defaultAccountData(name = "Allenatore") {
     resources: {
       stardust: 0, stardustPowder: 0, pokeballs: 0, greatBalls: 0, ultraBalls: 0,
       megaEnergy: 0, totalXp: 0, xlCandy: 0, sunStone: 0, sinnohStone: 0, unovaStone: 0,
-      lureModules: 0, incubators: 0,
+      lureModules: 0, incubators: 0, eliteFastTm: 0, eliteChargedTm: 0,
     },
     pokedex: Object.fromEntries(Object.keys(GEN_TOTALS).map((g) => [g, { caught: 0, seen: 0 }])),
     speciesDex: {},
@@ -70,17 +70,29 @@ function defaultAccountData(name = "Allenatore") {
     legendaries: LEGENDARIES.map((n) => ({
       name: n, caught: false, shiny: false, iv: "", date: "", attempts: 0, catches: 0,
     })),
+    eggs: [],
+    breakthrough: { stamps: 0, lastReward: "", history: [] },
+    eliteTms: { usage: [] },
   };
 }
 
 function defaultApp() {
   const id = "default";
   return {
-    version: 4,
+    version: 5,
     settings: { theme: "dark", lastBackupDate: null, backupReminderDismissed: false, iosHintShown: false },
     activeAccountId: id,
     accounts: { [id]: defaultAccountData("Allenatore principale") },
   };
+}
+
+function migrateToV5(raw) {
+  let appData = raw?.version >= 4 && raw.accounts ? raw : migrateToV4(raw);
+  appData.version = 5;
+  for (const acc of Object.values(appData.accounts)) {
+    mergeAccountData(defaultAccountData(), acc);
+  }
+  return appData;
 }
 
 function migrateToV4(raw) {
@@ -168,6 +180,11 @@ function mergeAccountData(base, incoming) {
       if (merged.legendaries[i]) Object.assign(merged.legendaries[i], leg);
     });
   }
+  if (Array.isArray(incoming.eggs)) merged.eggs = incoming.eggs;
+  if (incoming.breakthrough) Object.assign(merged.breakthrough, incoming.breakthrough);
+  if (incoming.eliteTms) {
+    if (Array.isArray(incoming.eliteTms.usage)) merged.eliteTms.usage = incoming.eliteTms.usage;
+  }
   return merged;
 }
 
@@ -178,7 +195,7 @@ function setActiveState() {
 function loadApp() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    app = raw ? migrateToV4(JSON.parse(raw)) : defaultApp();
+    app = raw ? migrateToV5(JSON.parse(raw)) : defaultApp();
   } catch (e) {
     console.warn("Caricamento fallito:", e);
     app = defaultApp();
@@ -448,7 +465,7 @@ function importAppData(parsed) {
     renderAll();
     return;
   }
-  app = parsed?.version >= 3 && parsed.accounts ? migrateToV4(parsed) : migrateToV4(parsed);
+  app = parsed?.version >= 3 && parsed.accounts ? migrateToV5(parsed) : migrateToV5(parsed);
   if (!app.accounts[app.activeAccountId]) app.activeAccountId = Object.keys(app.accounts)[0];
   setActiveState();
   seedHistories();

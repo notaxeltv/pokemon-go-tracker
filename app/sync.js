@@ -3,7 +3,7 @@
 function exportExcelSync() {
   return {
     format: "pokemon-go-tracker-excel-sync",
-    version: 2,
+    version: 3,
     exportDate: todayISO(),
     accountName: state.name,
     dashboard: { ...state.resources },
@@ -14,6 +14,9 @@ function exportExcelSync() {
     battles: state.battles,
     rocket: state.rocket,
     mega: state.mega,
+    eggs: state.eggs,
+    breakthrough: state.breakthrough,
+    eliteTms: state.eliteTms,
     legendaries: state.legendaries,
     events: state.events,
     quests: state.quests,
@@ -51,6 +54,15 @@ function importExcelSync(data) {
     if (Array.isArray(data.rocket.shadows)) state.rocket.shadows = data.rocket.shadows;
   }
   if (Array.isArray(data.mega)) state.mega = data.mega;
+  if (Array.isArray(data.eggs)) state.eggs = data.eggs;
+  if (data.breakthrough) {
+    if (!state.breakthrough) state.breakthrough = { stamps: 0, lastReward: "", history: [] };
+    Object.assign(state.breakthrough, data.breakthrough);
+  }
+  if (data.eliteTms?.usage) {
+    if (!state.eliteTms) state.eliteTms = { usage: [] };
+    state.eliteTms.usage = data.eliteTms.usage;
+  }
   if (Array.isArray(data.legendaries)) {
     data.legendaries.forEach((leg, i) => {
       if (state.legendaries[i]) Object.assign(state.legendaries[i], leg);

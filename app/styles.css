@@ -1185,6 +1185,159 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-top: 8px;
 }
 
+/* Completion */
+.completion-panel {
+  margin: 16px 0;
+}
+
+.completion-bars {
+  margin-top: 12px;
+}
+
+.completion-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+}
+
+/* Global search */
+.global-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 300;
+  margin-top: 4px;
+  box-shadow: var(--shadow);
+}
+
+.account-bar {
+  position: relative;
+}
+
+.search-result-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.search-result-item:hover {
+  background: var(--bg-input);
+}
+
+/* Raid bosses */
+.raid-bosses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.raid-boss-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.raid-boss-card h4 {
+  margin-bottom: 8px;
+}
+
+.raid-counters-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 8px 0 4px;
+}
+
+/* Events calendar */
+.events-calendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.event-cal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.event-cal-card.today {
+  border-color: var(--accent);
+}
+
+.event-cal-card.past {
+  opacity: 0.6;
+}
+
+.event-cal-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.event-cal-type, .event-cal-poke {
+  display: block;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.event-cal-countdown {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Breakthrough */
+.breakthrough-stamps {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.stamp {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.stamp.filled {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.species-load-more {
+  grid-column: 1 / -1;
+  margin: 12px auto;
+}
+
 @media (max-width: 768px) {
   .btn-menu {
     display: block;

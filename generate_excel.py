@@ -517,6 +517,21 @@ def build_mega_sheet(wb):
         ws.column_dimensions[get_column_letter(i)].width = w
 
 
+def build_eggs_sheet(wb):
+    ws = wb.create_sheet("Uova")
+    ws["A1"] = "Uova in incubazione"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 3, [
+        "Distanza (km)", "Pokémon", "Incubatrice", "Km percorsi", "Stato", "Inizio", "Schiusa", "Note"
+    ])
+    for r in range(4, 24):
+        for col in range(1, 9):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER if col in (1, 3, 4, 5, 6, 7) else LEFT)
+    widths = [12, 18, 12, 12, 14, 12, 12, 20]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
 def main():
     import build_pokemon_go_data
     build_pokemon_go_data.build_pokemon_data()
@@ -540,11 +555,12 @@ def main():
     build_legendaries_sheet(wb)
     build_rocket_sheet(wb)
     build_mega_sheet(wb)
+    build_eggs_sheet(wb)
 
     order = [
         "Dashboard", "Pokedex", "Specie", "Shiny", "XP", "Medaglie",
         "Battaglie", "Buddy", "Eventi", "Ricerche", "Vetrina", "Leggendari",
-        "Rocket", "Mega",
+        "Rocket", "Mega", "Uova",
     ]
     wb._sheets.sort(key=lambda s: order.index(s.title))
 
