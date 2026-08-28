@@ -236,7 +236,7 @@ def build_species_sheet(wb):
     ws["A1"] = "Pokédex per Specie (1025)"
     ws["A1"].font = TITLE_FONT
     ws["A2"] = "Segna Visto/Catturato/Shiny. Colonne Ottiene/Evoluzione sono di riferimento."
-    set_header_row(ws, 4, ["#", "Nome", "Gen", "Tipi", "Ottiene", "Evoluzione", "Visto", "Catturato", "Shiny"])
+    set_header_row(ws, 4, ["#", "Nome", "Gen", "Tipi", "Boost meteo", "Debolezze", "Resistenze", "Ottiene", "Evoluzione", "Visto", "Catturato", "Shiny"])
     start = 5
     for i, p in enumerate(POKEMON):
         r = start + i
@@ -247,24 +247,33 @@ def build_species_sheet(wb):
         for e in p.get("evolvesFrom", []):
             evo_parts.append(f"← {e['fromName']}: {e['how']}")
         evo = " | ".join(evo_parts) if evo_parts else "—"
+        weather = "; ".join(
+            f"{w['weather']} ({', '.join(w['types'])})" for w in p.get("weatherBoosts", [])
+        )
+        wk = p.get("weaknesses", {})
+        weak = ", ".join([*(f"{t} x2.56" for t in wk.get("doubleWeak", [])), *(f"{t} x1.6" for t in wk.get("weak", []))])
+        resist = ", ".join([*(f"{t} x0.39" for t in wk.get("doubleResist", [])), *(f"{t} x0.62" for t in wk.get("resist", []))])
         ws.cell(r, 1, p["id"])
         ws.cell(r, 2, p["name"])
         ws.cell(r, 3, p["gen"])
         ws.cell(r, 4, ", ".join(p.get("types", [])))
-        ws.cell(r, 5, obtain)
-        ws.cell(r, 6, evo)
-        ws.cell(r, 7, "No")
-        ws.cell(r, 8, "No")
-        ws.cell(r, 9, "No")
+        ws.cell(r, 5, weather or "—")
+        ws.cell(r, 6, weak or "—")
+        ws.cell(r, 7, resist or "—")
+        ws.cell(r, 8, obtain)
+        ws.cell(r, 9, evo)
+        ws.cell(r, 10, "No")
+        ws.cell(r, 11, "No")
+        ws.cell(r, 12, "No")
         style_cell(ws.cell(r, 1), GREEN, alignment=CENTER)
         style_cell(ws.cell(r, 2), alignment=LEFT)
         style_cell(ws.cell(r, 3), GREEN, alignment=CENTER)
         style_cell(ws.cell(r, 4), GREEN, alignment=LEFT)
-        for col in (5, 6):
+        for col in (5, 6, 7, 8, 9):
             style_cell(ws.cell(r, col), GREEN, alignment=LEFT)
-        for col in (7, 8, 9):
+        for col in (10, 11, 12):
             style_cell(ws.cell(r, col), YELLOW, alignment=CENTER)
-    for col, w in zip("ABCDEFGHI", [8, 18, 6, 14, 40, 40, 10, 12, 10]):
+    for col, w in zip("ABCDEFGHIJKL", [8, 18, 6, 14, 28, 28, 28, 36, 36, 10, 12, 10]):
         ws.column_dimensions[col].width = w
 
 

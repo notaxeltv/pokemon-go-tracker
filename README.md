@@ -14,7 +14,7 @@ Tracker completo per i progressi in **Pokémon GO** con inserimento manuale dei 
 ### App Web
 - **Dashboard** con riepilogo, obiettivi vicini e grafici storici (XP, Stardust, % Pokédex, raid)
 - **Pokédex** per generazione e **checklist 1025 specie** con filtri
-  - Per ogni Pokémon: **come si ottiene** (selvatico, raid, evento, evoluzione…) e **come evolve** (caramelle, camminata buddy, pietre, esca, scambio…)
+  - Per ogni Pokémon: **come si ottiene**, **come evolve**, **boost meteo** e **debolezze/resistenze**
 - **Shiny**, **Vetrina** (migliori catture), **Risorse & Livello** (1–80)
 - **72 medaglie** con grafico storico e ricerca/ordinamento
 - **Battaglie**, **Buddy** dettagliato, **Eventi**, **Ricerche**
@@ -54,6 +54,7 @@ Apri [http://localhost:8080](http://localhost:8080). Puoi anche installarla come
 
 ```bash
 pip install openpyxl
+python3 build_pokemon_go_data.py   # opzionale: aggiorna ottenimento/evoluzione
 python3 generate_excel.py
 ```
 
@@ -68,7 +69,8 @@ pokemon-go-tracker/
 ├── PokemonGO_Tracker.xlsx
 ├── generate_excel.py
 ├── medals.json
-├── pokemon.json
+├── pokemon.json             # Specie + ottenimento/evoluzione (generato da build_pokemon_go_data.py)
+├── build_pokemon_go_data.py # Arricchisce pokemon.json da dati GO
 ├── README.md
 └── app/
     ├── index.html

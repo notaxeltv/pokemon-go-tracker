@@ -945,6 +945,46 @@ input[type="number"]::-webkit-outer-spin-button {
   font-size: 0.85rem;
 }
 
+.type-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.type-tag small {
+  font-weight: 500;
+  opacity: 0.75;
+  font-size: 0.72rem;
+}
+
+.type-tag.type-weak {
+  background: rgba(232, 93, 93, 0.15);
+  border-color: rgba(232, 93, 93, 0.4);
+  color: #f08a8a;
+}
+
+.type-tag.type-resist {
+  background: rgba(76, 175, 130, 0.12);
+  border-color: rgba(76, 175, 130, 0.35);
+  color: var(--success);
+}
+
+.detail-empty {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
 .species-card.seen { opacity: 0.85; border-color: var(--warning); }
 .species-card.caught { opacity: 1; border-color: var(--success); background: rgba(76, 175, 130, 0.08); }
 

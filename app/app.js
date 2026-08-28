@@ -536,6 +536,11 @@ function closeMedalModal() {
   activeMedalId = null;
 }
 
+function renderTypeTags(types, variant = "weak") {
+  if (!types?.length) return '<span class="detail-empty">Nessuna</span>';
+  return types.map((t) => `<span class="type-tag type-${variant}">${esc(t)}</span>`).join("");
+}
+
 function openSpeciesModal(id) {
   const p = POKEMON.find((x) => x.id === id);
   if (!p) return;
@@ -543,6 +548,31 @@ function openSpeciesModal(id) {
   const types = (p.types || []).join(" · ") || "—";
   document.getElementById("species-modal-desc").textContent =
     `#${String(p.id).padStart(4, "0")} · Gen ${p.gen} · ${types}`;
+
+  const weatherList = document.getElementById("species-modal-weather");
+  if (p.weatherBoosts?.length) {
+    weatherList.innerHTML = p.weatherBoosts.map((w) =>
+      `<li><strong>${esc(w.weather)}</strong> → boost ${w.types.map((t) => esc(t)).join(", ")}</li>`).join("");
+  } else {
+    weatherList.innerHTML = "<li>Nessun boost meteo (tipo singolare o dati assenti)</li>";
+  }
+
+  const wk = p.weaknesses || {};
+  const weakParts = [
+    ...(wk.doubleWeak || []).map((t) => ({ t, label: "×2.56" })),
+    ...(wk.weak || []).map((t) => ({ t, label: "×1.6" })),
+  ];
+  document.getElementById("species-modal-weaknesses").innerHTML = weakParts.length
+    ? weakParts.map(({ t, label }) => `<span class="type-tag type-weak" title="Danno ${label}">${esc(t)} <small>${label}</small></span>`).join("")
+    : '<span class="detail-empty">Nessuna debolezza</span>';
+
+  const resistParts = [
+    ...(wk.doubleResist || []).map((t) => ({ t, label: "×0.39" })),
+    ...(wk.resist || []).map((t) => ({ t, label: "×0.62" })),
+  ];
+  document.getElementById("species-modal-resistances").innerHTML = resistParts.length
+    ? resistParts.map(({ t, label }) => `<span class="type-tag type-resist" title="Danno ${label}">${esc(t)} <small>${label}</small></span>`).join("")
+    : '<span class="detail-empty">Nessuna resistenza</span>';
 
   document.getElementById("species-modal-obtain").innerHTML =
     (p.obtain || []).map((o) => `<li>${esc(o)}</li>`).join("") || "<li>Dati non disponibili</li>";

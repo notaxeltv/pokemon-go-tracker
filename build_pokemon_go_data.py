@@ -46,6 +46,16 @@ LURE_IT = {
     "Rainy Lure Module": "Modulo esca piovosa attivo",
 }
 
+WEATHER_IT = {
+    "Clear": "Sereno",
+    "Rainy": "Pioggia",
+    "Partly Cloudy": "Parzialmente nuvoloso",
+    "Overcast": "Nuvoloso",
+    "Windy": "Ventoso",
+    "Snow": "Neve",
+    "Fog": "Nebbia",
+}
+
 
 def fetch_json(url, cache_file=None):
     if cache_file and cache_file.exists():
@@ -69,6 +79,11 @@ def load_sources():
     )
     types = fetch_json(
         "https://raw.githubusercontent.com/WatWowMap/pogo-data-api/main/data/v1/types.json",
+        ROOT / "data" / "pogo-types.json",
+    )
+    weather = fetch_json(
+        "https://raw.githubusercontent.com/WatWowMap/pogo-data-api/main/data/v1/weather.json",
+        ROOT / "data" / "pogo-weather.json",
     )
     pogo_evo = fetch_json(
         "https://pogoapi.net/api/v1/pokemon_evolutions.json",
@@ -79,7 +94,55 @@ def load_sources():
     evo_extra = {}
     for entry in pogo_evo:
         evo_extra[entry["pokemon_id"]] = entry.get("evolutions", [])
-    return go_pokemon, item_map, type_map, evo_extra
+    return go_pokemon, item_map, type_map, types, weather, evo_extra
+
+
+def calc_type_matchups(defender_type_ids, types_data, type_map):
+    type_by_id = {t["typeId"]: t for t in types_data}
+    weak, double_weak, resist, double_resist = [], [], [], []
+
+    for atk_id, atk_name in type_map.items():
+        if atk_id == 0:
+            continue
+        mult = 1.0
+        for def_id in defender_type_ids:
+            t = type_by_id.get(def_id, {})
+            if atk_id in t.get("immunes", []):
+                mult *= 0.390625
+            elif atk_id in t.get("resistances", []):
+                mult *= 0.625
+            elif atk_id in t.get("weaknesses", []):
+                mult *= 1.6
+
+        if mult >= 2.5:
+            double_weak.append(atk_name)
+        elif mult > 1.05:
+            weak.append(atk_name)
+        elif mult <= 0.42:
+            double_resist.append(atk_name)
+        elif mult < 0.95:
+            resist.append(atk_name)
+
+    return {
+        "weak": weak,
+        "doubleWeak": double_weak,
+        "resist": resist,
+        "doubleResist": double_resist,
+    }
+
+
+def calc_weather_boosts(defender_type_ids, weather_data, type_map):
+    boosts = []
+    for w in weather_data:
+        if not w.get("types"):
+            continue
+        matched = [type_map[t] for t in w["types"] if t in defender_type_ids and t in type_map]
+        if matched:
+            boosts.append({
+                "weather": WEATHER_IT.get(w["weatherName"], w["weatherName"]),
+                "types": matched,
+            })
+    return boosts
 
 
 def format_evo_method(evo, item_map, pogo_evos_for_target):
@@ -198,7 +261,7 @@ def build_obtain(go, predecessors, it_name):
 def build_pokemon_data():
     base = json.loads(POKEMON_PATH.read_text(encoding="utf-8"))
     it_names = {p["id"]: p["name"] for p in base}
-    go_pokemon, item_map, type_map, evo_extra = load_sources()
+    go_pokemon, item_map, type_map, types_data, weather_data, evo_extra = load_sources()
     go_by_id = {p["pokedexId"]: p for p in go_pokemon}
 
     predecessors = {i: [] for i in range(1, 1026)}
@@ -221,7 +284,10 @@ def build_pokemon_data():
     for p in base:
         pid = p["id"]
         go = go_by_id.get(pid, {})
-        types = [type_map.get(t, "?") for t in go.get("types", []) if t]
+        type_ids = [t for t in go.get("types", []) if t]
+        types = [type_map.get(t, "?") for t in type_ids]
+        matchups = calc_type_matchups(type_ids, types_data, type_map)
+        weather_boosts = calc_weather_boosts(type_ids, weather_data, type_map)
 
         evolves_to = []
         for evo in go.get("evolutions", []):
@@ -245,6 +311,8 @@ def build_pokemon_data():
             "buddyKm": go.get("buddyDistance"),
             "legendary": bool(go.get("legendary")),
             "mythic": bool(go.get("mythic")),
+            "weatherBoosts": weather_boosts,
+            "weaknesses": matchups,
         }
         enriched.append(entry)
 
@@ -254,4 +322,4 @@ def build_pokemon_data():
 
 if __name__ == "__main__":
     data = build_pokemon_data()
-    print(f"Aggiornato {POKEMON_PATH} ({len(data)} specie con ottenimento/evoluzione)")
+    print(f"Aggiornato {POKEMON_PATH} ({len(data)} specie con ottenimento/evoluzione/meteo/tipi)")
