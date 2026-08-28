@@ -39,7 +39,11 @@ function uid() {
 function defaultAccountData(name = "Allenatore") {
   return {
     name,
-    resources: { stardust: 0, stardustPowder: 0, pokeballs: 0, megaEnergy: 0, totalXp: 0 },
+    resources: {
+      stardust: 0, stardustPowder: 0, pokeballs: 0, greatBalls: 0, ultraBalls: 0,
+      megaEnergy: 0, totalXp: 0, xlCandy: 0, sunStone: 0, sinnohStone: 0, unovaStone: 0,
+      lureModules: 0, incubators: 0,
+    },
     pokedex: Object.fromEntries(Object.keys(GEN_TOTALS).map((g) => [g, { caught: 0, seen: 0 }])),
     speciesDex: {},
     shiny: [],
@@ -48,9 +52,17 @@ function defaultAccountData(name = "Allenatore") {
     globalHistory: { xp: [], stardust: [], pokedexPct: [], raidWins: [] },
     battles: {
       raid: { wins: 0, losses: 0 },
-      gbl: { wins: 0, losses: 0 },
+      gbl: {
+        wins: 0, losses: 0,
+        grande: { wins: 0, losses: 0, rank: 0 },
+        ultra: { wins: 0, losses: 0, rank: 0 },
+        master: { wins: 0, losses: 0, rank: 0 },
+        season: "", sets: 0, streak: 0,
+      },
       buddy: { km: 0, candies: 0, hearts: 0 },
     },
+    rocket: { grunts: 0, leaders: 0, giovanni: 0, shadows: [] },
+    mega: [],
     buddies: [],
     events: [],
     quests: [],
@@ -64,11 +76,27 @@ function defaultAccountData(name = "Allenatore") {
 function defaultApp() {
   const id = "default";
   return {
-    version: 3,
-    settings: { theme: "dark" },
+    version: 4,
+    settings: { theme: "dark", lastBackupDate: null, backupReminderDismissed: false, iosHintShown: false },
     activeAccountId: id,
     accounts: { [id]: defaultAccountData("Allenatore principale") },
   };
+}
+
+function migrateToV4(raw) {
+  let appData = raw?.version >= 3 && raw.accounts ? raw : migrateToV3(raw);
+  appData.version = 4;
+  appData.settings = {
+    theme: "dark",
+    lastBackupDate: appData.settings?.lastBackupDate ?? null,
+    backupReminderDismissed: appData.settings?.backupReminderDismissed ?? false,
+    iosHintShown: appData.settings?.iosHintShown ?? false,
+    ...appData.settings,
+  };
+  for (const acc of Object.values(appData.accounts)) {
+    mergeAccountData(defaultAccountData(), acc);
+  }
+  return appData;
 }
 
 function migrateToV3(raw) {
@@ -119,9 +147,18 @@ function mergeAccountData(base, incoming) {
   }
   if (incoming.battles) {
     Object.assign(merged.battles.raid, incoming.battles.raid || {});
-    Object.assign(merged.battles.gbl, incoming.battles.gbl || {});
+    const gbl = incoming.battles.gbl || {};
+    Object.assign(merged.battles.gbl, gbl);
+    for (const league of ["grande", "ultra", "master"]) {
+      if (gbl[league]) Object.assign(merged.battles.gbl[league], gbl[league]);
+    }
     Object.assign(merged.battles.buddy, incoming.battles.buddy || {});
   }
+  if (incoming.rocket) {
+    Object.assign(merged.rocket, incoming.rocket);
+    if (Array.isArray(incoming.rocket.shadows)) merged.rocket.shadows = incoming.rocket.shadows;
+  }
+  if (Array.isArray(incoming.mega)) merged.mega = incoming.mega;
   if (Array.isArray(incoming.buddies)) merged.buddies = incoming.buddies;
   if (Array.isArray(incoming.events)) merged.events = incoming.events;
   if (Array.isArray(incoming.quests)) merged.quests = incoming.quests;
@@ -141,7 +178,7 @@ function setActiveState() {
 function loadApp() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    app = raw ? migrateToV3(JSON.parse(raw)) : defaultApp();
+    app = raw ? migrateToV4(JSON.parse(raw)) : defaultApp();
   } catch (e) {
     console.warn("Caricamento fallito:", e);
     app = defaultApp();
@@ -411,7 +448,7 @@ function importAppData(parsed) {
     renderAll();
     return;
   }
-  app = parsed?.version >= 3 && parsed.accounts ? parsed : migrateToV3(parsed);
+  app = parsed?.version >= 3 && parsed.accounts ? migrateToV4(parsed) : migrateToV4(parsed);
   if (!app.accounts[app.activeAccountId]) app.activeAccountId = Object.keys(app.accounts)[0];
   setActiveState();
   seedHistories();

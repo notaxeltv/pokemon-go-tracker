@@ -419,7 +419,8 @@ def build_dashboard_sheet(wb):
     ws["A4"].font = BOLD
     resources = [
         ("Stardust", 5), ("Polvere Lucente", 6), ("Poké Ball", 7),
-        ("Mega Energy", 8), ("XP Totale", 9),
+        ("Mega Ball", 8), ("Ultra Ball", 9), ("Mega Energy", 10),
+        ("Caramelle XL", 11), ("XP Totale", 12),
     ]
     for label, row in resources:
         ws.cell(row, 1, label)
@@ -428,57 +429,92 @@ def build_dashboard_sheet(wb):
         style_cell(ws.cell(row, 2), YELLOW, alignment=CENTER, number_format="#,##0")
 
     # Livello da XP (riferimento foglio XP)
-    ws["A11"] = "LIVELLO & XP"
-    ws["A11"].font = BOLD
-    ws["A12"], ws["A13"], ws["A14"] = "Livello attuale", "XP per prossimo livello", "XP mancanti"
-    ws["B12"] = f'=IF(B9="","",MATCH(B9,XP!$B$4:$B${XP_SHEET_END_ROW},1))'
-    ws["B13"] = f'=IF(B12>={MAX_LEVEL},0,INDEX(XP!$B$4:$B${XP_SHEET_END_ROW},B12+1))'
-    ws["B14"] = f'=IF(B12>={MAX_LEVEL},0,B13-B9)'
-    for row in (12, 13, 14):
+    ws["A14"] = "LIVELLO & XP"
+    ws["A14"].font = BOLD
+    ws["A15"], ws["A16"], ws["A17"] = "Livello attuale", "XP per prossimo livello", "XP mancanti"
+    ws["B15"] = f'=IF(B12="","",MATCH(B12,XP!$B$4:$B${XP_SHEET_END_ROW},1))'
+    ws["B16"] = f'=IF(B15>={MAX_LEVEL},0,INDEX(XP!$B$4:$B${XP_SHEET_END_ROW},B15+1))'
+    ws["B17"] = f'=IF(B15>={MAX_LEVEL},0,B16-B12)'
+    for row in (15, 16, 17):
         style_cell(ws.cell(row, 1), alignment=LEFT)
         style_cell(ws.cell(row, 2), GREEN, alignment=CENTER, number_format="#,##0")
 
     # Pokédex
-    ws["A16"] = "POKÉDEX"
-    ws["A16"].font = BOLD
-    ws["A17"], ws["A18"], ws["A19"] = "Totale catturati", "% Catturati", "% Visti"
-    ws["B17"] = "=Pokedex!C14"
-    ws["B18"] = "=Pokedex!F14"
-    ws["B19"] = "=Pokedex!G14"
-    for row, fmt in [(17, "#,##0"), (18, "0.00%"), (19, "0.00%")]:
+    ws["A19"] = "POKÉDEX"
+    ws["A19"].font = BOLD
+    ws["A20"], ws["A21"], ws["A22"] = "Totale catturati", "% Catturati", "% Visti"
+    ws["B20"] = "=Pokedex!C14"
+    ws["B21"] = "=Pokedex!F14"
+    ws["B22"] = "=Pokedex!G14"
+    for row, fmt in [(20, "#,##0"), (21, "0.00%"), (22, "0.00%")]:
         style_cell(ws.cell(row, 1), alignment=LEFT)
         style_cell(ws.cell(row, 2), GREEN, alignment=CENTER, number_format=fmt)
 
     # Shiny
-    ws["A21"] = "SHINY"
-    ws["A21"].font = BOLD
-    ws["A22"] = "Shiny registrati"
-    ws["B22"] = '=COUNTA(Shiny!B5:B54)'
-    style_cell(ws["A22"], alignment=LEFT)
-    style_cell(ws["B22"], GREEN, alignment=CENTER)
+    ws["A24"] = "SHINY"
+    ws["A24"].font = BOLD
+    ws["A25"] = "Shiny registrati"
+    ws["B25"] = '=COUNTA(Shiny!B5:B54)'
+    style_cell(ws["A25"], alignment=LEFT)
+    style_cell(ws["B25"], GREEN, alignment=CENTER)
 
     # Raid & GBL (da Battaglie)
-    ws["A24"] = "RAID & GBL"
-    ws["A24"].font = BOLD
-    ws["A25"], ws["A26"] = "Raid Win Rate", "GBL Win Rate"
-    ws["B25"] = "=Battaglie!B6"
-    ws["B26"] = "=Battaglie!B11"
-    for row in (25, 26):
+    ws["A27"] = "RAID & GBL"
+    ws["A27"].font = BOLD
+    ws["A28"], ws["A29"] = "Raid Win Rate", "GBL Win Rate"
+    ws["B28"] = "=Battaglie!B6"
+    ws["B29"] = "=Battaglie!B11"
+    for row in (28, 29):
         style_cell(ws.cell(row, 1), alignment=LEFT)
         style_cell(ws.cell(row, 2), GREEN, alignment=CENTER, number_format="0.00%")
 
     # Leggendari
-    ws["A28"] = "LEGGENDARI"
-    ws["A28"].font = BOLD
-    ws["A29"], ws["A30"] = "Catturati", "Shiny"
-    ws["B29"] = '=COUNTIF(Leggendari!B5:B58,"Sì")+COUNTIF(Leggendari!B5:B58,"Si")+COUNTIF(Leggendari!B5:B58,"sì")'
-    ws["B30"] = '=COUNTIF(Leggendari!C5:C58,"Sì")+COUNTIF(Leggendari!C5:C58,"Si")+COUNTIF(Leggendari!C5:C58,"sì")'
-    for row in (29, 30):
+    ws["A31"] = "LEGGENDARI"
+    ws["A31"].font = BOLD
+    ws["A32"], ws["A33"] = "Catturati", "Shiny"
+    ws["B32"] = '=COUNTIF(Leggendari!B5:B58,"Sì")+COUNTIF(Leggendari!B5:B58,"Si")+COUNTIF(Leggendari!B5:B58,"sì")'
+    ws["B33"] = '=COUNTIF(Leggendari!C5:C58,"Sì")+COUNTIF(Leggendari!C5:C58,"Si")+COUNTIF(Leggendari!C5:C58,"sì")'
+    for row in (32, 33):
         style_cell(ws.cell(row, 1), alignment=LEFT)
         style_cell(ws.cell(row, 2), GREEN, alignment=CENTER)
 
     ws.column_dimensions["A"].width = 24
     ws.column_dimensions["B"].width = 18
+
+
+def build_rocket_sheet(wb):
+    ws = wb.create_sheet("Rocket")
+    ws["A1"] = "Team GO Rocket"
+    ws["A1"].font = TITLE_FONT
+    ws["A3"] = "STATISTICHE"
+    ws["A3"].font = BOLD
+    for row, label in [(4, "Grunt sconfitti"), (5, "Leader sconfitti"), (6, "Giovanni sconfitti")]:
+        ws.cell(row, 1, label)
+        ws.cell(row, 2, 0)
+        style_cell(ws.cell(row, 1), alignment=LEFT)
+        style_cell(ws.cell(row, 2), YELLOW, alignment=CENTER)
+    ws["A8"] = "SHADOW"
+    ws["A8"].font = BOLD
+    set_header_row(ws, 9, ["Pokémon", "Purificato", "IV %", "Data", "Note"])
+    for r in range(10, 30):
+        for col in range(1, 6):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER if col > 1 else LEFT)
+    widths = [18, 12, 10, 12, 24]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
+def build_mega_sheet(wb):
+    ws = wb.create_sheet("Mega")
+    ws["A1"] = "Megaevoluzione"
+    ws["A1"].font = TITLE_FONT
+    set_header_row(ws, 3, ["Pokémon", "Energia", "Mega effettuate", "Note"])
+    for r in range(4, 24):
+        for col in range(1, 5):
+            style_cell(ws.cell(r, col), YELLOW, alignment=CENTER if col in (2, 3) else LEFT)
+    widths = [18, 12, 16, 24]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
 
 
 def main():
@@ -502,10 +538,13 @@ def main():
     build_quests_sheet(wb)
     build_showcase_sheet(wb)
     build_legendaries_sheet(wb)
+    build_rocket_sheet(wb)
+    build_mega_sheet(wb)
 
     order = [
         "Dashboard", "Pokedex", "Specie", "Shiny", "XP", "Medaglie",
         "Battaglie", "Buddy", "Eventi", "Ricerche", "Vetrina", "Leggendari",
+        "Rocket", "Mega",
     ]
     wb._sheets.sort(key=lambda s: order.index(s.title))
 

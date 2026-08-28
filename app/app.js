@@ -16,13 +16,17 @@ const MEDAL_CATEGORIES = ["all", ...new Set(MEDALS.map((m) => m.category))];
 
 function renderAll() {
   renderAccountBar();
+  renderBanners();
   renderDashboard();
+  renderHunters();
   renderPokedex();
   renderSpeciesDex();
   renderShiny();
   renderResources();
   renderMedals();
   renderBattles();
+  renderRocket();
+  renderMega();
   renderBuddies();
   renderEvents();
   renderQuests();
@@ -105,6 +109,87 @@ function renderDashboard() {
     valueLabel: metricLabels[dashChartMetric],
     formatValue: dashChartMetric === "pokedexPct" ? (v) => `${v.toFixed(1)}%` : (v) => fmtNum(Math.round(v)),
     legendEl: document.getElementById("dash-chart-legend"),
+  });
+
+  const etaEl = document.getElementById("dashboard-eta");
+  if (etaEl) {
+    const eta = estimateDaysToLevel();
+    if (eta?.message) etaEl.textContent = eta.message;
+    else if (eta) {
+      etaEl.textContent = `Stima livello successivo: ~${eta.days} giorni (${fmtNum(eta.xpPerDay)} XP/giorno, mancano ${fmtNum(eta.needed)} XP)`;
+    } else etaEl.textContent = "";
+  }
+}
+
+function renderBanners() {
+  const ios = document.getElementById("ios-hint");
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  if (ios) {
+    if (isIOS && !isStandalone && !app.settings.iosHintShown) {
+      ios.classList.remove("hidden");
+      ios.innerHTML = `📱 <strong>Installa su iPhone:</strong> Safari → Condividi → Aggiungi a Home.
+        <button type="button" id="btn-dismiss-ios" class="btn btn-secondary btn-sm">OK</button>`;
+      document.getElementById("btn-dismiss-ios")?.addEventListener("click", () => {
+        app.settings.iosHintShown = true;
+        saveApp();
+        ios.classList.add("hidden");
+      });
+    } else ios.classList.add("hidden");
+  }
+
+  const backup = document.getElementById("backup-banner");
+  if (backup) {
+    if (needsBackupReminder()) {
+      backup.classList.remove("hidden");
+      backup.innerHTML = `⚠️ Nessun backup da oltre 30 giorni.
+        <button type="button" id="btn-backup-now" class="btn btn-primary btn-sm">Esporta ora</button>
+        <button type="button" id="btn-dismiss-backup" class="btn btn-secondary btn-sm">Più tardi</button>`;
+      document.getElementById("btn-backup-now")?.addEventListener("click", () => exportDataWithBackupMark());
+      document.getElementById("btn-dismiss-backup")?.addEventListener("click", () => {
+        app.settings.backupReminderDismissed = true;
+        saveApp();
+        backup.classList.add("hidden");
+      });
+    } else backup.classList.add("hidden");
+  }
+}
+
+function renderHunters() {
+  const grid = document.getElementById("hunters-grid");
+  if (!grid) return;
+  const missingDex = getMissingDex(30);
+  const missingShiny = getMissingShinyDex(30);
+  const missingLegShiny = getMissingLegendaryShiny();
+  const nearPlat = getMedalsNearPlatinum(8);
+  const sp = speciesTotals();
+
+  grid.innerHTML = `
+    <div class="panel">
+      <h3>📖 Pokédex mancanti <span class="badge">${sp.missing}</span></h3>
+      <ul class="hunter-list">${missingDex.map((p) => `<li>#${p.id} ${esc(p.name)}</li>`).join("") || "<li class='empty-msg'>Completato!</li>"}</ul>
+    </div>
+    <div class="panel">
+      <h3>✨ Shiny mancanti <span class="badge">${sp.total - sp.shiny}</span></h3>
+      <ul class="hunter-list">${missingShiny.map((p) => `<li>#${p.id} ${esc(p.name)}</li>`).join("") || "<li class='empty-msg'>Completato!</li>"}</ul>
+    </div>
+    <div class="panel">
+      <h3>🌟 Leggendari shiny mancanti <span class="badge">${missingLegShiny.length}</span></h3>
+      <ul class="hunter-list">${missingLegShiny.map((l) => `<li>${esc(l.name)}</li>`).join("") || "<li class='empty-msg'>Completato!</li>"}</ul>
+    </div>
+    <div class="panel">
+      <h3>🏅 Vicine al Platino</h3>
+      <ul class="hunter-list">${nearPlat.map(({ medal, tier, pct }) =>
+        `<li><button type="button" class="hunter-medal-link" data-id="${medal.id}">${esc(medal.name)}</button> — ${tier} (${fmtPct(pct)})</li>`
+      ).join("") || "<li class='empty-msg'>Nessuna in corso.</li>"}</ul>
+    </div>`;
+
+  grid.querySelectorAll(".hunter-medal-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelector('.nav-btn[data-section="medals"]')?.click();
+      openMedalModal(btn.dataset.id);
+    });
   });
 }
 
@@ -203,7 +288,15 @@ function renderSpeciesDex() {
       updateState((s) => {
         const entry = getSpeciesEntry(id);
         entry[field] = input.checked;
-        if (field === "caught" && input.checked) entry.seen = true;
+        if (field === "caught" && input.checked) {
+          entry.seen = true;
+          linkSpeciesCaught(id, s);
+        }
+        if (field === "seen" && input.checked) entry.seen = true;
+        if (field === "shiny" && input.checked) {
+          const p = POKEMON.find((x) => x.id === id);
+          if (p) linkSpeciesShiny(id, p.name, s);
+        }
       }, { syncGen: true });
     });
   });
@@ -256,6 +349,25 @@ function renderResources() {
       updateState((s) => { s.resources[f.key] = Math.max(0, parseInt(e.target.value, 10) || 0); });
     });
   });
+
+  const invFields = [
+    { key: "greatBalls", label: "Mega Ball" }, { key: "ultraBalls", label: "Ultra Ball" },
+    { key: "xlCandy", label: "Caramelle XL" }, { key: "sunStone", label: "Pietra Sole" },
+    { key: "sinnohStone", label: "Pietra Sinnoh" }, { key: "unovaStone", label: "Pietra Unima" },
+    { key: "lureModules", label: "Esca moduli" }, { key: "incubators", label: "Incubatrici" },
+  ];
+  const invForm = document.getElementById("inventory-form");
+  if (invForm) {
+    invForm.innerHTML = `<h3 class="form-section-title">Inventario</h3>` + invFields.map((f) => `
+      <div class="form-field"><label>${f.label}</label><input type="number" min="0" id="inv-${f.key}" value="${r[f.key] ?? 0}"></div>`
+    ).join("");
+    invFields.forEach((f) => {
+      document.getElementById(`inv-${f.key}`).addEventListener("change", (e) => {
+        updateState((s) => { s.resources[f.key] = Math.max(0, parseInt(e.target.value, 10) || 0); });
+      });
+    });
+  }
+
   const xp = calcXpInfo(r.totalXp);
   document.getElementById("xp-progress").innerHTML = `
     <h3>Livello ${xp.level}${xp.level >= MAX_LEVEL ? " (MAX)" : ` → ${xp.level + 1}`}</h3>
@@ -360,6 +472,177 @@ function renderBattles() {
   bind("gbl-wins", "gbl.wins"); bind("gbl-losses", "gbl.losses");
   bind("buddy-km", "buddy.km", (v) => Math.max(0, parseFloat(v) || 0));
   bind("buddy-candies", "buddy.candies"); bind("buddy-hearts", "buddy.hearts");
+
+  renderGblPanel(b.gbl);
+}
+
+function renderGblPanel(gbl) {
+  const panel = document.getElementById("gbl-panel");
+  if (!panel) return;
+  const leagues = [
+    { key: "grande", label: "Grande" }, { key: "ultra", label: "Ultra" }, { key: "master", label: "Master" },
+  ];
+  panel.innerHTML = `
+    <h3>🏆 GBL Dettagliato</h3>
+    <div class="form-grid gbl-meta">
+      <div class="form-field"><label>Stagione</label><input type="text" id="gbl-season" value="${esc(gbl.season || "")}" placeholder="es. 2025-1"></div>
+      <div class="form-field"><label>Set giocati</label><input type="number" min="0" id="gbl-sets" value="${gbl.sets ?? 0}"></div>
+      <div class="form-field"><label>Serie vittorie</label><input type="number" min="0" id="gbl-streak" value="${gbl.streak ?? 0}"></div>
+    </div>
+    <div class="gbl-leagues">${leagues.map(({ key, label }) => {
+      const lg = gbl[key] || { wins: 0, losses: 0, rank: 0 };
+      const wr = calcWinRate(lg.wins, lg.losses);
+      return `<div class="battle-card gbl-league-card">
+        <h4>Lega ${label}</h4>
+        <div class="battle-field"><label>Vittorie</label><input type="number" min="0" id="gbl-${key}-wins" value="${lg.wins ?? 0}"></div>
+        <div class="battle-field"><label>Sconfitte</label><input type="number" min="0" id="gbl-${key}-losses" value="${lg.losses ?? 0}"></div>
+        <div class="battle-field"><label>Rank</label><input type="number" min="0" id="gbl-${key}-rank" value="${lg.rank ?? 0}"></div>
+        <div class="battle-result"><span class="label">Win Rate</span><span class="value">${fmtPct(wr)}</span></div>
+      </div>`;
+    }).join("")}</div>`;
+
+  document.getElementById("gbl-season")?.addEventListener("change", (e) => {
+    updateState((s) => { s.battles.gbl.season = e.target.value; });
+  });
+  document.getElementById("gbl-sets")?.addEventListener("change", (e) => {
+    updateState((s) => { s.battles.gbl.sets = Math.max(0, parseInt(e.target.value, 10) || 0); });
+  });
+  document.getElementById("gbl-streak")?.addEventListener("change", (e) => {
+    updateState((s) => { s.battles.gbl.streak = Math.max(0, parseInt(e.target.value, 10) || 0); });
+  });
+  for (const key of ["grande", "ultra", "master"]) {
+    document.getElementById(`gbl-${key}-wins`)?.addEventListener("change", (e) => {
+      updateState((s) => { s.battles.gbl[key].wins = Math.max(0, parseInt(e.target.value, 10) || 0); });
+    });
+    document.getElementById(`gbl-${key}-losses`)?.addEventListener("change", (e) => {
+      updateState((s) => { s.battles.gbl[key].losses = Math.max(0, parseInt(e.target.value, 10) || 0); });
+    });
+    document.getElementById(`gbl-${key}-rank`)?.addEventListener("change", (e) => {
+      updateState((s) => { s.battles.gbl[key].rank = Math.max(0, parseInt(e.target.value, 10) || 0); });
+    });
+  }
+}
+
+function renderRocket() {
+  const statsEl = document.getElementById("rocket-stats");
+  const body = document.getElementById("rocket-body");
+  if (!statsEl || !body) return;
+  const r = state.rocket || { grunts: 0, leaders: 0, giovanni: 0, shadows: [] };
+  const fields = [
+    { key: "grunts", label: "Grunt sconfitti" },
+    { key: "leaders", label: "Leader sconfitti" },
+    { key: "giovanni", label: "Giovanni sconfitti" },
+  ];
+  statsEl.innerHTML = fields.map((f) => `
+    <div class="form-field"><label>${f.label}</label><input type="number" min="0" id="rocket-${f.key}" value="${r[f.key] ?? 0}"></div>`
+  ).join("");
+  fields.forEach((f) => {
+    document.getElementById(`rocket-${f.key}`).addEventListener("change", (e) => {
+      updateState((s) => {
+        if (!s.rocket) s.rocket = { grunts: 0, leaders: 0, giovanni: 0, shadows: [] };
+        s.rocket[f.key] = Math.max(0, parseInt(e.target.value, 10) || 0);
+      });
+    });
+  });
+
+  const shadows = r.shadows || [];
+  if (shadows.length === 0) {
+    body.innerHTML = `<tr><td colspan="6" class="empty-msg">Nessuno shadow registrato.</td></tr>`;
+    return;
+  }
+  body.innerHTML = shadows.map((row, i) => `<tr data-idx="${i}">
+    <td><input type="text" class="table-input" value="${esc(row.pokemon)}" data-field="pokemon"></td>
+    <td><select data-field="purified"><option value="false"${!row.purified ? " selected" : ""}>No</option><option value="true"${row.purified ? " selected" : ""}>Sì</option></select></td>
+    <td><input type="number" class="table-input" min="0" max="100" step="0.01" value="${row.iv ?? ""}" data-field="iv"></td>
+    <td><input type="date" class="table-input" value="${row.date || ""}" data-field="date"></td>
+    <td><input type="text" class="table-input" value="${esc(row.notes)}" data-field="notes"></td>
+    <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
+  </tr>`).join("");
+  bindTableInputs(body, (idx, field, val) => updateState((s) => {
+    if (field === "purified") s.rocket.shadows[idx].purified = val === "true";
+    else s.rocket.shadows[idx][field] = val;
+  }));
+  body.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => updateState((s) => { s.rocket.shadows.splice(parseInt(btn.dataset.del, 10), 1); }));
+  });
+}
+
+function renderMega() {
+  const body = document.getElementById("mega-body");
+  if (!body) return;
+  if (!state.mega?.length) {
+    body.innerHTML = `<tr><td colspan="5" class="empty-msg">Nessuna energia mega registrata.</td></tr>`;
+    return;
+  }
+  body.innerHTML = state.mega.map((row, i) => `<tr data-idx="${i}">
+    <td><input type="text" class="table-input" value="${esc(row.pokemon)}" data-field="pokemon"></td>
+    <td><input type="number" class="table-input" min="0" value="${row.energy ?? 0}" data-field="energy"></td>
+    <td><input type="number" class="table-input" min="0" value="${row.megas ?? 0}" data-field="megas"></td>
+    <td><input type="text" class="table-input" value="${esc(row.notes)}" data-field="notes"></td>
+    <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
+  </tr>`).join("");
+  bindTableInputs(body, (idx, field, val) => updateState((s) => {
+    if (["energy", "megas"].includes(field)) s.mega[idx][field] = Number(val) || 0;
+    else s.mega[idx][field] = val;
+  }));
+  body.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => updateState((s) => { s.mega.splice(parseInt(btn.dataset.del, 10), 1); }));
+  });
+}
+
+let toolsInitialized = false;
+
+function renderTools() {
+  if (toolsInitialized) return;
+  toolsInitialized = true;
+
+  const cpForm = document.getElementById("cp-calc-form");
+  if (cpForm) {
+    cpForm.innerHTML = `
+      <div class="form-field"><label>Attacco base</label><input type="number" min="0" id="cp-base-atk" value="100"></div>
+      <div class="form-field"><label>Difesa base</label><input type="number" min="0" id="cp-base-def" value="100"></div>
+      <div class="form-field"><label>PS base</label><input type="number" min="0" id="cp-base-sta" value="100"></div>
+      <div class="form-field"><label>IV Att</label><input type="number" min="0" max="15" id="cp-iv-atk" value="15"></div>
+      <div class="form-field"><label>IV Dif</label><input type="number" min="0" max="15" id="cp-iv-def" value="15"></div>
+      <div class="form-field"><label>IV PS</label><input type="number" min="0" max="15" id="cp-iv-sta" value="15"></div>
+      <div class="form-field"><label>Livello</label><input type="number" min="1" max="50" step="0.5" id="cp-level" value="40"></div>
+      <button type="button" id="btn-cp-calc" class="btn btn-primary">Calcola CP</button>`;
+    document.getElementById("btn-cp-calc")?.addEventListener("click", () => {
+      const cp = calcCpEstimate(
+        Number(document.getElementById("cp-base-atk").value) || 0,
+        Number(document.getElementById("cp-base-def").value) || 0,
+        Number(document.getElementById("cp-base-sta").value) || 0,
+        Number(document.getElementById("cp-iv-atk").value) || 0,
+        Number(document.getElementById("cp-iv-def").value) || 0,
+        Number(document.getElementById("cp-iv-sta").value) || 0,
+        Number(document.getElementById("cp-level").value) || 40,
+      );
+      document.getElementById("cp-calc-result").textContent = `CP stimato: ${fmtNum(cp)}`;
+    });
+  }
+
+  const compareForm = document.getElementById("compare-form");
+  if (compareForm) {
+    const ids = Object.keys(app.accounts);
+    const opts = ids.map((id) => `<option value="${id}">${esc(app.accounts[id].name)}</option>`).join("");
+    compareForm.innerHTML = `
+      <div class="form-field"><label>Account A</label><select id="compare-a">${opts}</select></div>
+      <div class="form-field"><label>Account B</label><select id="compare-b">${opts}</select></div>
+      <button type="button" id="btn-compare" class="btn btn-primary">Confronta</button>`;
+    if (ids.length > 1) document.getElementById("compare-b").value = ids[1];
+    document.getElementById("btn-compare")?.addEventListener("click", () => {
+      const rows = compareAccounts(
+        document.getElementById("compare-a").value,
+        document.getElementById("compare-b").value,
+      );
+      const result = document.getElementById("compare-result");
+      if (!rows) { result.innerHTML = "<p class='empty-msg'>Seleziona due account.</p>"; return; }
+      const nameA = app.accounts[document.getElementById("compare-a").value].name;
+      const nameB = app.accounts[document.getElementById("compare-b").value].name;
+      result.innerHTML = `<table class="data-table compare-table"><thead><tr><th>Metrica</th><th>${esc(nameA)}</th><th>${esc(nameB)}</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr><td>${esc(r.label)}</td><td>${r.a}</td><td>${r.b}</td></tr>`).join("")}</tbody></table>`;
+    });
+  }
 }
 
 function renderBuddies() {
@@ -489,10 +772,13 @@ function renderLegendaries() {
   }).join("");
   bindTableInputs(body, (idx, field, val) => updateState((s) => {
     const leg = s.legendaries[idx];
-    if (field === "caught" || field === "shiny") leg[field] = val === "true";
-    else if (field === "iv" || field === "date") leg[field] = val;
+    if (field === "caught" || field === "shiny") {
+      leg[field] = val === "true";
+      if (field === "caught" && leg.caught) linkLegendaryCaught(leg.name, false, s);
+      if (field === "shiny" && leg.shiny) linkLegendaryCaught(leg.name, true, s);
+    } else if (field === "iv" || field === "date") leg[field] = val;
     else leg[field] = Math.max(0, parseInt(val, 10) || 0);
-  }));
+  }, { syncGen: true }));
 }
 
 function bindTableInputs(container, onChange) {
@@ -574,6 +860,11 @@ function openSpeciesModal(id) {
     ? resistParts.map(({ t, label }) => `<span class="type-tag type-resist" title="Danno ${label}">${esc(t)} <small>${label}</small></span>`).join("")
     : '<span class="detail-empty">Nessuna resistenza</span>';
 
+  const counters = getRaidCounters(id);
+  document.getElementById("species-modal-counters").innerHTML = counters.length
+    ? counters.map((t) => `<span class="type-tag type-weak">${esc(t)}</span>`).join("")
+    : '<span class="detail-empty">Nessun dato</span>';
+
   document.getElementById("species-modal-obtain").innerHTML =
     (p.obtain || []).map((o) => `<li>${esc(o)}</li>`).join("") || "<li>Dati non disponibili</li>";
 
@@ -629,8 +920,24 @@ function initNav() {
       document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById(`section-${btn.dataset.section}`).classList.add("active");
+      closeMobileMenu();
     });
   });
+}
+
+function closeMobileMenu() {
+  document.getElementById("sidebar")?.classList.remove("open");
+  document.getElementById("sidebar-overlay")?.classList.add("hidden");
+}
+
+function initMobileMenu() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  document.getElementById("btn-menu")?.addEventListener("click", () => {
+    const open = sidebar.classList.toggle("open");
+    overlay.classList.toggle("hidden", !open);
+  });
+  overlay?.addEventListener("click", closeMobileMenu);
 }
 
 function initMedalModal() {
@@ -655,9 +962,11 @@ function init() {
   loadApp();
   seedHistories();
   initNav();
+  initMobileMenu();
   initMedalModal();
   initSpeciesModal();
   renderAll();
+  renderTools();
 
   document.getElementById("account-select").addEventListener("change", (e) => switchAccount(e.target.value));
   document.getElementById("account-name").addEventListener("change", (e) => {
@@ -702,14 +1011,37 @@ function init() {
   document.getElementById("btn-add-showcase").addEventListener("click", () => {
     updateState((s) => { s.showcase.push({ date: todayISO(), pokemon: "", cp: "", att: "", def: "", sta: "", tags: "" }); });
   });
+  document.getElementById("btn-add-shadow")?.addEventListener("click", () => {
+    updateState((s) => {
+      if (!s.rocket) s.rocket = { grunts: 0, leaders: 0, giovanni: 0, shadows: [] };
+      s.rocket.shadows.push({ pokemon: "", purified: false, iv: "", date: todayISO(), notes: "" });
+    });
+  });
+  document.getElementById("btn-add-mega")?.addEventListener("click", () => {
+    updateState((s) => {
+      if (!s.mega) s.mega = [];
+      s.mega.push({ pokemon: "", energy: 0, megas: 0, notes: "" });
+    });
+  });
 
-  document.getElementById("btn-export").addEventListener("click", exportData);
+  document.getElementById("btn-export").addEventListener("click", exportDataWithBackupMark);
   document.getElementById("btn-export-excel").addEventListener("click", exportExcelData);
   document.getElementById("btn-import").addEventListener("click", () => document.getElementById("import-file").click());
   document.getElementById("import-file").addEventListener("change", (e) => {
     if (e.target.files[0]) importData(e.target.files[0]);
     e.target.value = "";
   });
+  document.getElementById("btn-import-csv")?.addEventListener("click", () => document.getElementById("import-csv-file").click());
+  document.getElementById("import-csv-file")?.addEventListener("change", (e) => {
+    if (e.target.files[0]) importCsvFile(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("btn-import-xlsx")?.addEventListener("click", () => document.getElementById("import-xlsx-file").click());
+  document.getElementById("import-xlsx-file")?.addEventListener("change", (e) => {
+    if (e.target.files[0]) importXlsxFile(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("btn-pdf-card")?.addEventListener("click", exportTrainerCard);
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});

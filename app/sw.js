@@ -1,7 +1,8 @@
-const CACHE = "go-tracker-v5";
+const CACHE = "go-tracker-v6";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./core.js", "./charts.js", "./sync.js",
-  "./medals.js", "./pokemon.js", "./manifest.json",
+  "./extras.js", "./tools.js", "./medals.js", "./pokemon.js", "./manifest.json",
+  "./vendor/xlsx.mini.min.js",
 ];
 
 self.addEventListener("install", (e) => {

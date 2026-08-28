@@ -12,20 +12,29 @@ Tracker completo per i progressi in **Pokémon GO** con inserimento manuale dei 
 ## Funzionalità principali
 
 ### App Web
-- **Dashboard** con riepilogo, obiettivi vicini e grafici storici (XP, Stardust, % Pokédex, raid)
+- **Dashboard** con riepilogo, obiettivi vicini, stima giorni al livello successivo e grafici storici (XP, Stardust, % Pokédex, raid)
+- **Mancanti** — Pokédex, shiny, leggendari shiny e medaglie vicine al platino
 - **Pokédex** per generazione e **checklist 1025 specie** con filtri
-  - Per ogni Pokémon: **come si ottiene**, **come evolve**, **boost meteo** e **debolezze/resistenze**
-- **Shiny**, **Vetrina** (migliori catture), **Risorse & Livello** (1–80)
+  - Per ogni Pokémon: **come si ottiene**, **come evolve**, **boost meteo**, **debolezze/resistenze** e **contatori raid**
+  - Auto-collegamento tra specie, shiny e leggendari
+- **Shiny**, **Vetrina** (migliori catture), **Risorse & Livello** (1–80) con inventario esteso
 - **72 medaglie** con grafico storico e ricerca/ordinamento
-- **Battaglie**, **Buddy** dettagliato, **Eventi**, **Ricerche**
+- **Battaglie** con GBL dettagliato (Grande/Ultra/Master, rank, stagione)
+- **Team GO Rocket** (grunt, leader, Giovanni, shadow)
+- **Megaevoluzione** (energia e conteggio mega)
+- **Buddy** dettagliato, **Eventi**, **Ricerche**
 - **Leggendari** con win rate
+- **Strumenti**: calcolatore CP, confronto account, scheda allenatore PDF/stampa
+- **Import CSV/Excel** (compatibile export Poke Genie e simili)
 - **Multi-account** con switch rapido
 - **Tema chiaro/scuro**
-- **PWA** installabile sul telefono (offline)
+- **PWA** installabile su Android e iPhone (offline, guida installazione iOS)
+- **Menu mobile** con sidebar a scomparsa
+- **Promemoria backup** automatico ogni 30 giorni
 - **Backup JSON** e **Sync Excel JSON** per collegare app e foglio
 
 ### Excel
-Fogli: Dashboard, Pokédex, Specie (1025), Shiny, XP, Medaglie, Battaglie, Buddy, Eventi, Ricerche, Vetrina, Leggendari.
+Fogli: Dashboard, Pokédex, Specie (1025), Shiny, XP, Medaglie, Battaglie, Buddy, Eventi, Ricerche, Vetrina, Leggendari, Rocket, Mega.
 
 ---
 
@@ -38,6 +47,11 @@ python3 -m http.server 8080
 
 Apri [http://localhost:8080](http://localhost:8080). Puoi anche installarla come app dal browser (PWA).
 
+### Installazione su iPhone
+1. Apri l'app in **Safari**
+2. Tocca **Condividi** → **Aggiungi a Home**
+3. L'app funziona offline dopo il primo caricamento
+
 ---
 
 ## Sincronizzazione Excel ↔ App
@@ -47,6 +61,10 @@ Apri [http://localhost:8080](http://localhost:8080). Puoi anche installarla come
 3. Per migrare dati dall'app a Excel: compila manualmente i fogli corrispondenti usando il JSON come riferimento, oppure importa il backup JSON nell'app su un altro dispositivo
 
 > I due formati non si aggiornano in tempo reale: usa export/import JSON per i backup periodici.
+
+### Import CSV / Excel
+- **Importa CSV**: file export da Poke Genie o tracker simili (colonne Pokémon, CP, IV, Shiny)
+- **Importa Excel**: file `.xlsx` con struttura tabellare simile
 
 ---
 
@@ -77,11 +95,14 @@ pokemon-go-tracker/
     ├── manifest.json
     ├── sw.js
     ├── core.js
+    ├── extras.js
+    ├── tools.js
     ├── charts.js
     ├── sync.js
     ├── app.js
     ├── medals.js
     ├── pokemon.js
+    ├── vendor/xlsx.mini.min.js
     └── styles.css
 ```
 

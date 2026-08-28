@@ -2,16 +2,23 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1a1d27">
   <meta name="description" content="Tracker personale Pokémon GO offline">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GO Tracker">
   <title>Pokémon GO Tracker</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <button type="button" id="btn-menu" class="btn-menu" aria-label="Menu">☰</button>
+  <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
   <div class="app">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="logo">
         <span class="logo-icon">⚡</span>
         <h1>GO Tracker</h1>
@@ -27,38 +34,44 @@
       </div>
       <nav class="nav">
         <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-section="hunters">🎯 Mancanti</button>
         <button class="nav-btn" data-section="pokedex">📖 Pokédex</button>
         <button class="nav-btn" data-section="shiny">✨ Shiny</button>
         <button class="nav-btn" data-section="showcase">🏆 Vetrina</button>
         <button class="nav-btn" data-section="resources">💎 Risorse</button>
         <button class="nav-btn" data-section="medals">🏅 Medaglie</button>
         <button class="nav-btn" data-section="battles">⚔️ Battaglie</button>
+        <button class="nav-btn" data-section="rocket">👾 Rocket</button>
+        <button class="nav-btn" data-section="mega">🔮 Mega</button>
         <button class="nav-btn" data-section="buddies">🐾 Buddy</button>
         <button class="nav-btn" data-section="events">🎉 Eventi</button>
         <button class="nav-btn" data-section="quests">📜 Ricerche</button>
         <button class="nav-btn" data-section="legendaries">🌟 Leggendari</button>
+        <button class="nav-btn" data-section="tools">🧮 Strumenti</button>
       </nav>
       <div class="sidebar-footer">
         <button id="btn-export" class="btn btn-secondary">⬇ Backup JSON</button>
         <button id="btn-export-excel" class="btn btn-secondary">⬇ Sync Excel</button>
         <button id="btn-import" class="btn btn-secondary">⬆ Importa JSON</button>
+        <button id="btn-import-csv" class="btn btn-secondary">⬆ Importa CSV</button>
+        <button id="btn-import-xlsx" class="btn btn-secondary">⬆ Importa Excel</button>
         <input type="file" id="import-file" accept=".json" hidden>
+        <input type="file" id="import-csv-file" accept=".csv,.txt" hidden>
+        <input type="file" id="import-xlsx-file" accept=".xlsx,.xls" hidden>
         <p class="save-status" id="save-status">Salvato</p>
       </div>
     </aside>
 
     <main class="content">
+      <div id="ios-hint" class="banner banner-info hidden"></div>
+      <div id="backup-banner" class="banner banner-warning hidden"></div>
+
       <section id="section-dashboard" class="section active">
-        <header class="section-header">
-          <h2>Dashboard</h2>
-          <p>Riepilogo, obiettivi e andamento nel tempo</p>
-        </header>
+        <header class="section-header"><h2>Dashboard</h2><p>Riepilogo, obiettivi e andamento</p></header>
         <div class="cards-grid" id="dashboard-cards"></div>
+        <p id="dashboard-eta" class="summary-line"></p>
         <div class="dashboard-panels">
-          <div class="panel">
-            <h3>🎯 Prossimi obiettivi</h3>
-            <div id="dashboard-goals" class="goals-list"></div>
-          </div>
+          <div class="panel"><h3>🎯 Prossimi obiettivi</h3><div id="dashboard-goals" class="goals-list"></div></div>
           <div class="panel panel-wide">
             <h3>📈 Andamento</h3>
             <div class="chart-toolbar">
@@ -73,18 +86,20 @@
             </div>
             <div class="chart-wrap">
               <canvas id="dash-chart" height="260"></canvas>
-              <p id="dash-chart-empty" class="chart-empty hidden">Modifica i dati per iniziare a tracciare l'andamento.</p>
+              <p id="dash-chart-empty" class="chart-empty hidden">Modifica i dati per tracciare l'andamento.</p>
             </div>
             <p class="chart-legend" id="dash-chart-legend"></p>
           </div>
         </div>
       </section>
 
+      <section id="section-hunters" class="section">
+        <header class="section-header"><h2>Cosa manca</h2><p>Pokédex, shiny e medaglie vicine al platino</p></header>
+        <div class="hunters-grid" id="hunters-grid"></div>
+      </section>
+
       <section id="section-pokedex" class="section">
-        <header class="section-header">
-          <h2>Pokédex</h2>
-          <p>Totali per generazione o checklist per singolo Pokémon</p>
-        </header>
+        <header class="section-header"><h2>Pokédex</h2><p>Generazioni o checklist 1025 specie</p></header>
         <div class="tab-bar">
           <button class="pokedex-tab active" data-tab="gens">Per generazione</button>
           <button class="pokedex-tab" data-tab="species">Per specie (1025)</button>
@@ -101,46 +116,41 @@
         <div id="pokedex-species-panel" class="hidden">
           <div id="species-toolbar" class="toolbar-row"></div>
           <p id="species-summary" class="summary-line"></p>
-          <p class="summary-line">Clicca su una scheda per vedere come ottenerlo e come evolve.</p>
+          <p class="summary-line">Clicca su una scheda per dettagli, meteo e debolezze.</p>
           <div id="species-grid" class="species-grid"></div>
         </div>
       </section>
 
       <section id="section-shiny" class="section">
-        <header class="section-header"><h2>Registro Shiny</h2><p>IV% calcolato da Att/Dif/PS</p></header>
+        <header class="section-header"><h2>Registro Shiny</h2></header>
         <button id="btn-add-shiny" class="btn btn-primary">+ Aggiungi Shiny</button>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Data</th><th>Pokémon</th><th>CP</th><th>Att</th><th>Dif</th><th>PS</th><th>IV %</th><th>Metodo</th><th>Note</th><th></th>
-          </tr></thead><tbody id="shiny-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Data</th><th>Pokémon</th><th>CP</th><th>Att</th><th>Dif</th><th>PS</th><th>IV %</th><th>Metodo</th><th>Note</th><th></th>
+        </tr></thead><tbody id="shiny-body"></tbody></table></div>
       </section>
 
       <section id="section-showcase" class="section">
-        <header class="section-header"><h2>Vetrina</h2><p>Le tue migliori catture: 100%, XXL, legacy...</p></header>
+        <header class="section-header"><h2>Vetrina</h2></header>
         <button id="btn-add-showcase" class="btn btn-primary">+ Aggiungi alla vetrina</button>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Data</th><th>Pokémon</th><th>CP</th><th>Att</th><th>Dif</th><th>PS</th><th>IV %</th><th>Tag</th><th></th>
-          </tr></thead><tbody id="showcase-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Data</th><th>Pokémon</th><th>CP</th><th>Att</th><th>Dif</th><th>PS</th><th>IV %</th><th>Tag</th><th></th>
+        </tr></thead><tbody id="showcase-body"></tbody></table></div>
       </section>
 
       <section id="section-resources" class="section">
-        <header class="section-header"><h2>Risorse & Livello</h2><p>XP totale → livello 1–80</p></header>
+        <header class="section-header"><h2>Risorse & Livello</h2></header>
         <div class="form-grid" id="resources-form"></div>
+        <div class="form-grid" id="inventory-form"></div>
         <div class="xp-progress-card" id="xp-progress"></div>
       </section>
 
       <section id="section-medals" class="section">
-        <header class="section-header"><h2>Medaglie</h2><p>72 medaglie · clicca per il grafico</p></header>
+        <header class="section-header"><h2>Medaglie</h2></header>
         <div class="medals-toolbar" id="medals-toolbar"></div>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Medaglia</th><th>Categoria</th><th>Descrizione</th><th>Progresso</th>
-            <th>Bronzo</th><th>Argento</th><th>Oro</th><th>Platino</th><th>Tier</th><th>% Pross.</th>
-          </tr></thead><tbody id="medals-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Medaglia</th><th>Categoria</th><th>Descrizione</th><th>Progresso</th>
+          <th>Bronzo</th><th>Argento</th><th>Oro</th><th>Platino</th><th>Tier</th><th>% Pross.</th>
+        </tr></thead><tbody id="medals-body"></tbody></table></div>
       </section>
 
       <div id="medal-modal" class="modal hidden" aria-hidden="true">
@@ -157,10 +167,7 @@
             <button type="button" class="chart-period-btn" data-period="months">Mesi</button>
             <button type="button" class="chart-period-btn" data-period="years">Anni</button>
           </div>
-          <div class="chart-wrap">
-            <canvas id="medal-chart" height="300"></canvas>
-            <p id="medal-chart-empty" class="chart-empty hidden">Nessun dato storico.</p>
-          </div>
+          <div class="chart-wrap"><canvas id="medal-chart" height="300"></canvas><p id="medal-chart-empty" class="chart-empty hidden">Nessun dato storico.</p></div>
           <p class="chart-legend" id="medal-chart-legend"></p>
         </div>
       </div>
@@ -169,83 +176,98 @@
         <div class="modal-backdrop" id="species-modal-backdrop"></div>
         <div class="modal-panel" role="dialog">
           <header class="modal-header">
-            <div>
-              <h3 id="species-modal-title">Pokémon</h3>
-              <p id="species-modal-desc" class="modal-subtitle"></p>
-            </div>
+            <div><h3 id="species-modal-title">Pokémon</h3><p id="species-modal-desc" class="modal-subtitle"></p></div>
             <button type="button" class="modal-close" id="species-modal-close">✕</button>
           </header>
           <div class="species-detail">
-            <section class="detail-block" id="species-weather-block">
-              <h4>Boost meteo</h4>
-              <ul id="species-modal-weather" class="detail-list"></ul>
-            </section>
-            <section class="detail-block" id="species-weak-block">
-              <h4>Debolezze</h4>
-              <div id="species-modal-weaknesses" class="type-tags-wrap"></div>
-            </section>
-            <section class="detail-block" id="species-resist-block">
-              <h4>Resistenze</h4>
-              <div id="species-modal-resistances" class="type-tags-wrap"></div>
-            </section>
-            <section class="detail-block">
-              <h4>Come si ottiene</h4>
-              <ul id="species-modal-obtain" class="detail-list"></ul>
-            </section>
-            <section class="detail-block" id="species-evolves-from-block">
-              <h4>Evoluzione da</h4>
-              <ul id="species-modal-from" class="detail-list"></ul>
-            </section>
-            <section class="detail-block" id="species-evolves-to-block">
-              <h4>Come evolve</h4>
-              <ul id="species-modal-to" class="detail-list"></ul>
-            </section>
+            <section class="detail-block"><h4>Boost meteo</h4><ul id="species-modal-weather" class="detail-list"></ul></section>
+            <section class="detail-block"><h4>Debolezze</h4><div id="species-modal-weaknesses" class="type-tags-wrap"></div></section>
+            <section class="detail-block"><h4>Resistenze</h4><div id="species-modal-resistances" class="type-tags-wrap"></div></section>
+            <section class="detail-block" id="species-counters-block"><h4>Contatori raid (tipi)</h4><div id="species-modal-counters" class="type-tags-wrap"></div></section>
+            <section class="detail-block"><h4>Come si ottiene</h4><ul id="species-modal-obtain" class="detail-list"></ul></section>
+            <section class="detail-block" id="species-evolves-from-block"><h4>Evoluzione da</h4><ul id="species-modal-from" class="detail-list"></ul></section>
+            <section class="detail-block" id="species-evolves-to-block"><h4>Come evolve</h4><ul id="species-modal-to" class="detail-list"></ul></section>
             <p id="species-modal-buddy" class="detail-note"></p>
           </div>
         </div>
       </div>
 
       <section id="section-battles" class="section">
-        <header class="section-header"><h2>Battaglie</h2><p>Raid, GBL e totali buddy</p></header>
+        <header class="section-header"><h2>Battaglie</h2><p>Raid, GBL dettagliato e buddy</p></header>
         <div class="battles-grid" id="battles-grid"></div>
+        <div class="panel" id="gbl-panel"></div>
+      </section>
+
+      <section id="section-rocket" class="section">
+        <header class="section-header"><h2>Team GO Rocket</h2></header>
+        <div class="form-grid" id="rocket-stats"></div>
+        <button id="btn-add-shadow" class="btn btn-primary">+ Aggiungi Shadow</button>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Pokémon</th><th>Purificato</th><th>IV %</th><th>Data</th><th>Note</th><th></th>
+        </tr></thead><tbody id="rocket-body"></tbody></table></div>
+      </section>
+
+      <section id="section-mega" class="section">
+        <header class="section-header"><h2>Megaevoluzione</h2></header>
+        <button id="btn-add-mega" class="btn btn-primary">+ Aggiungi energia Mega</button>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Pokémon</th><th>Energia</th><th>Mega effettuate</th><th>Note</th><th></th>
+        </tr></thead><tbody id="mega-body"></tbody></table></div>
       </section>
 
       <section id="section-buddies" class="section">
-        <header class="section-header"><h2>Buddy</h2><p>Registro dettagliato per ogni buddy</p></header>
+        <header class="section-header"><h2>Buddy</h2></header>
         <button id="btn-add-buddy" class="btn btn-primary">+ Aggiungi Buddy</button>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Pokémon</th><th>Attivo</th><th>Amicizia</th><th>Km</th><th>Caramelle</th><th>Cuori</th><th>Inizio</th><th></th>
-          </tr></thead><tbody id="buddies-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Pokémon</th><th>Attivo</th><th>Amicizia</th><th>Km</th><th>Caramelle</th><th>Cuori</th><th>Inizio</th><th></th>
+        </tr></thead><tbody id="buddies-body"></tbody></table></div>
       </section>
 
       <section id="section-events" class="section">
-        <header class="section-header"><h2>Eventi</h2><p>Community Day, GO Fest, raid day...</p></header>
+        <header class="section-header"><h2>Eventi</h2></header>
         <button id="btn-add-event" class="btn btn-primary">+ Aggiungi evento</button>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Data</th><th>Nome</th><th>Tipo</th><th>Pokémon</th><th>Shiny</th><th>Note</th><th></th>
-          </tr></thead><tbody id="events-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Data</th><th>Nome</th><th>Tipo</th><th>Pokémon</th><th>Shiny</th><th>Note</th><th></th>
+        </tr></thead><tbody id="events-body"></tbody></table></div>
       </section>
 
       <section id="section-quests" class="section">
-        <header class="section-header"><h2>Ricerche</h2><p>Speciali, sul campo, salita di livello</p></header>
+        <header class="section-header"><h2>Ricerche</h2></header>
         <button id="btn-add-quest" class="btn btn-primary">+ Aggiungi ricerca</button>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Nome</th><th>Tipo</th><th>Stato</th><th>Inizio</th><th>Completata</th><th>Note</th><th></th>
-          </tr></thead><tbody id="quests-body"></tbody></table>
-        </div>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Nome</th><th>Tipo</th><th>Stato</th><th>Inizio</th><th>Completata</th><th>Note</th><th></th>
+        </tr></thead><tbody id="quests-body"></tbody></table></div>
       </section>
 
       <section id="section-legendaries" class="section">
-        <header class="section-header"><h2>Leggendari</h2><p>Win rate = catture ÷ tentativi</p></header>
-        <div class="table-wrap">
-          <table class="data-table"><thead><tr>
-            <th>Pokémon</th><th>Catturato</th><th>Shiny</th><th>IV %</th><th>Data</th><th>Tentativi</th><th>Catture</th><th>Win Rate</th>
-          </tr></thead><tbody id="legendaries-body"></tbody></table>
+        <header class="section-header"><h2>Leggendari</h2></header>
+        <div class="table-wrap"><table class="data-table"><thead><tr>
+          <th>Pokémon</th><th>Catturato</th><th>Shiny</th><th>IV %</th><th>Data</th><th>Tentativi</th><th>Catture</th><th>Win Rate</th>
+        </tr></thead><tbody id="legendaries-body"></tbody></table></div>
+      </section>
+
+      <section id="section-tools" class="section">
+        <header class="section-header"><h2>Strumenti</h2><p>Calcolatori, confronto account, scheda allenatore</p></header>
+        <div class="tools-grid">
+          <div class="panel">
+            <h3>Calcolatore CP (stima)</h3>
+            <div class="calc-form" id="cp-calc-form"></div>
+            <p id="cp-calc-result" class="calc-result"></p>
+          </div>
+          <div class="panel">
+            <h3>Confronto account</h3>
+            <div id="compare-form" class="calc-form"></div>
+            <div id="compare-result"></div>
+          </div>
+          <div class="panel">
+            <h3>Installazione iPhone</h3>
+            <ol class="ios-steps">
+              <li>Apri questa pagina in <strong>Safari</strong></li>
+              <li>Tocca <strong>Condividi</strong> → <strong>Aggiungi a Home</strong></li>
+              <li>L'app funziona offline dopo il primo caricamento</li>
+            </ol>
+            <button id="btn-pdf-card" class="btn btn-primary">📄 Scheda allenatore (PDF)</button>
+          </div>
         </div>
       </section>
     </main>
@@ -254,8 +276,10 @@
   <script src="pokemon.js"></script>
   <script src="medals.js"></script>
   <script src="core.js"></script>
+  <script src="extras.js"></script>
   <script src="charts.js"></script>
   <script src="sync.js"></script>
+  <script src="tools.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

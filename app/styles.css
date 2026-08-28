@@ -1023,37 +1023,214 @@ input[type="number"]::-webkit-outer-spin-button {
   max-width: 220px;
 }
 
+/* Mobile menu */
+.btn-menu {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 150;
+}
+
+.sidebar-overlay:not(.hidden) {
+  display: block;
+}
+
+/* Banners */
+.banner {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.banner-info {
+  background: rgba(91, 141, 239, 0.15);
+  border: 1px solid rgba(91, 141, 239, 0.35);
+}
+
+.banner-warning {
+  background: rgba(240, 180, 41, 0.15);
+  border: 1px solid rgba(240, 180, 41, 0.35);
+}
+
+/* Hunters */
+.hunters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.hunter-list {
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.hunter-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.hunter-medal-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.hunter-medal-link:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--bg-input);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+/* Tools */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.calc-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.calc-form .form-field {
+  margin: 0;
+}
+
+.calc-form .btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.calc-result {
+  margin-top: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ios-steps {
+  margin: 12px 0 16px;
+  padding-left: 20px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.ios-steps li {
+  margin-bottom: 8px;
+}
+
+.compare-table {
+  margin-top: 12px;
+}
+
+.form-section-title {
+  grid-column: 1 / -1;
+  font-size: 1rem;
+  margin: 8px 0 4px;
+  color: var(--text-secondary);
+}
+
+.gbl-leagues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.gbl-league-card h4 {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.gbl-meta {
+  margin-top: 8px;
+}
+
 @media (max-width: 768px) {
+  .btn-menu {
+    display: block;
+  }
+
   .sidebar {
-    width: 100%;
-    position: relative;
-    height: auto;
+    width: var(--sidebar-width);
+    position: fixed;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
   }
 
   .content {
     margin-left: 0;
-    padding: 20px 16px;
+    padding: 56px 16px 20px;
   }
 
   .app {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    overflow-x: auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-x: visible;
   }
 
   .nav-btn {
-    flex: 1 1 auto;
-    min-width: 120px;
-    text-align: center;
-    font-size: 0.82rem;
-    padding: 8px 10px;
+    flex: none;
+    min-width: auto;
+    text-align: left;
+    font-size: 0.88rem;
+    padding: 10px 14px;
   }
 
   .dashboard-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .calc-form {
     grid-template-columns: 1fr;
   }
 }
