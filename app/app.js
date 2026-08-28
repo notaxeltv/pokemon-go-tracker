@@ -4,8 +4,11 @@ let medalFilter = "all";
 let medalSearch = "";
 let medalSort = "name";
 let speciesGenFilter = "all";
+let speciesTypeFilter = "all";
 let speciesStatusFilter = "all";
 let speciesSearch = "";
+let speciesShowLimit = 60;
+let eventsView = "list";
 let activeMedalId = null;
 let chartPeriod = "days";
 let dashChartMetric = "xp";
@@ -25,10 +28,13 @@ function renderAll() {
   renderResources();
   renderMedals();
   renderBattles();
+  renderRaidBosses();
   renderRocket();
   renderMega();
   renderBuddies();
+  renderEggs();
   renderEvents();
+  renderBreakthrough();
   renderQuests();
   renderShowcase();
   renderLegendaries();
@@ -75,6 +81,19 @@ function renderDashboard() {
   document.getElementById("dashboard-cards").innerHTML = cards.map((c) => `
     <div class="card"><div class="card-label">${c.label}</div>
     <div class="card-value${c.accent ? " accent" : ""}${c.success ? " success" : ""}${c.warning ? " warning" : ""}">${c.value}</div></div>`).join("");
+
+  const comp = getCompletionStats();
+  const compEl = document.getElementById("dashboard-completion");
+  if (compEl) {
+    compEl.innerHTML = `
+      <h3>🏁 Completamento globale: ${fmtPct(comp.overall)}</h3>
+      <div class="completion-bars">
+        <div class="completion-row"><span>Pokédex</span><div class="goal-bar-wrap"><div class="goal-bar" style="width:${(comp.scores.dex * 100).toFixed(0)}%"></div></div><span>${comp.counts.dexCaught}/${comp.counts.dexTotal}</span></div>
+        <div class="completion-row"><span>Medaglie Platino</span><div class="goal-bar-wrap"><div class="goal-bar" style="width:${(comp.scores.medals * 100).toFixed(0)}%"></div></div><span>${comp.counts.platinumMedals}/${comp.counts.medalsTotal}</span></div>
+        <div class="completion-row"><span>Leggendari</span><div class="goal-bar-wrap"><div class="goal-bar" style="width:${(comp.scores.legendaries * 100).toFixed(0)}%"></div></div><span>${comp.counts.legendariesCaught}/${comp.counts.legendariesTotal}</span></div>
+        <div class="completion-row"><span>Shiny dex</span><div class="goal-bar-wrap"><div class="goal-bar" style="width:${(comp.scores.shinyDex * 100).toFixed(0)}%"></div></div><span>${comp.counts.shinyDex}</span></div>
+      </div>`;
+  }
 
   const goals = getGoals(8);
   document.getElementById("dashboard-goals").innerHTML = goals.length
@@ -233,9 +252,11 @@ function renderSpeciesDex() {
   if (!toolbar) return;
 
   const gens = ["all", ...Array.from({ length: 9 }, (_, i) => String(i + 1))];
+  const typeOpts = ["all", ...POKEMON_TYPES];
   toolbar.innerHTML = `
     <input type="search" id="species-search" class="search-input" placeholder="Cerca Pokémon..." value="${esc(speciesSearch)}">
     <select id="species-gen-filter" class="select-input">${gens.map((g) => `<option value="${g}"${speciesGenFilter === g ? " selected" : ""}>${g === "all" ? "Tutte le gen" : "Gen " + g}</option>`).join("")}</select>
+    <select id="species-type-filter" class="select-input">${typeOpts.map((t) => `<option value="${t}"${speciesTypeFilter === t ? " selected" : ""}>${t === "all" ? "Tutti i tipi" : t}</option>`).join("")}</select>
     <select id="species-status-filter" class="select-input">
       <option value="all"${speciesStatusFilter === "all" ? " selected" : ""}>Tutti</option>
       <option value="missing"${speciesStatusFilter === "missing" ? " selected" : ""}>Mancanti</option>
@@ -244,12 +265,14 @@ function renderSpeciesDex() {
       <option value="shiny"${speciesStatusFilter === "shiny" ? " selected" : ""}>Shiny</option>
     </select>`;
 
-  document.getElementById("species-search").addEventListener("input", (e) => { speciesSearch = e.target.value.toLowerCase(); renderSpeciesDex(); });
-  document.getElementById("species-gen-filter").addEventListener("change", (e) => { speciesGenFilter = e.target.value; renderSpeciesDex(); });
-  document.getElementById("species-status-filter").addEventListener("change", (e) => { speciesStatusFilter = e.target.value; renderSpeciesDex(); });
+  document.getElementById("species-search").addEventListener("input", (e) => { speciesSearch = e.target.value.toLowerCase(); speciesShowLimit = 60; renderSpeciesDex(); });
+  document.getElementById("species-gen-filter").addEventListener("change", (e) => { speciesGenFilter = e.target.value; speciesShowLimit = 60; renderSpeciesDex(); });
+  document.getElementById("species-type-filter").addEventListener("change", (e) => { speciesTypeFilter = e.target.value; speciesShowLimit = 60; renderSpeciesDex(); });
+  document.getElementById("species-status-filter").addEventListener("change", (e) => { speciesStatusFilter = e.target.value; speciesShowLimit = 60; renderSpeciesDex(); });
 
   let list = POKEMON.filter((p) => {
     if (speciesGenFilter !== "all" && p.gen !== Number(speciesGenFilter)) return false;
+    if (speciesTypeFilter !== "all" && !(p.types || []).includes(speciesTypeFilter)) return false;
     if (speciesSearch && !p.name.toLowerCase().includes(speciesSearch) && !String(p.id).includes(speciesSearch)) return false;
     const e = state.speciesDex[p.id] || {};
     if (speciesStatusFilter === "missing" && e.caught) return false;
@@ -264,7 +287,8 @@ function renderSpeciesDex() {
     `${sp.caught}/${sp.total} catturati · ${sp.shiny} shiny · ${list.length} mostrati`;
 
   const grid = document.getElementById("species-grid");
-  grid.innerHTML = list.slice(0, 300).map((p) => {
+  const shown = list.slice(0, speciesShowLimit);
+  grid.innerHTML = shown.map((p) => {
     const e = state.speciesDex[p.id] || { caught: false, seen: false, shiny: false };
     const cls = e.caught ? "caught" : e.seen ? "seen" : "";
     return `<div class="species-card ${cls}" data-id="${p.id}">
@@ -278,7 +302,14 @@ function renderSpeciesDex() {
         <label title="Shiny"><input type="checkbox" data-id="${p.id}" data-field="shiny"${e.shiny ? " checked" : ""}> ✨</label>
       </div>
     </div>`;
-  }).join("") + (list.length > 300 ? `<p class="empty-msg">Mostrati 300 di ${list.length}. Affina la ricerca.</p>` : "");
+  }).join("") + (list.length > speciesShowLimit
+    ? `<button type="button" id="species-load-more" class="btn btn-secondary species-load-more">Mostra altri (${list.length - speciesShowLimit} rimanenti)</button>`
+    : "");
+
+  document.getElementById("species-load-more")?.addEventListener("click", () => {
+    speciesShowLimit += 60;
+    renderSpeciesDex();
+  });
 
   grid.querySelectorAll("input").forEach((input) => {
     input.addEventListener("change", (ev) => {
@@ -355,6 +386,7 @@ function renderResources() {
     { key: "xlCandy", label: "Caramelle XL" }, { key: "sunStone", label: "Pietra Sole" },
     { key: "sinnohStone", label: "Pietra Sinnoh" }, { key: "unovaStone", label: "Pietra Unima" },
     { key: "lureModules", label: "Esca moduli" }, { key: "incubators", label: "Incubatrici" },
+    { key: "eliteFastTm", label: "Elite TM Fast" }, { key: "eliteChargedTm", label: "Elite TM Charged" },
   ];
   const invForm = document.getElementById("inventory-form");
   if (invForm) {
@@ -366,6 +398,37 @@ function renderResources() {
         updateState((s) => { s.resources[f.key] = Math.max(0, parseInt(e.target.value, 10) || 0); });
       });
     });
+  }
+
+  const tmPanel = document.getElementById("elite-tm-panel");
+  if (tmPanel) {
+    const usage = state.eliteTms?.usage || [];
+    tmPanel.innerHTML = `<h3>Elite TM — utilizzo</h3>${
+      usage.length
+        ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Pokémon</th><th>Mossa</th><th>Tipo</th><th></th></tr></thead><tbody id="etm-body">${
+          usage.map((u, i) => `<tr data-idx="${i}">
+            <td><input type="date" class="table-input" value="${u.date || ""}" data-field="date"></td>
+            <td><input type="text" class="table-input" value="${esc(u.pokemon)}" data-field="pokemon"></td>
+            <td><input type="text" class="table-input" value="${esc(u.move)}" data-field="move"></td>
+            <td><select data-field="tmType"><option value="fast"${u.tmType === "fast" ? " selected" : ""}>Fast</option><option value="charged"${u.tmType !== "fast" ? " selected" : ""}>Charged</option></select></td>
+            <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
+          </tr>`).join("")
+        }</tbody></table></div>`
+        : "<p class='empty-msg'>Nessun Elite TM usato.</p>"
+    }<button type="button" id="btn-add-etm" class="btn btn-primary">+ Registra utilizzo</button>`;
+    document.getElementById("btn-add-etm")?.addEventListener("click", () => {
+      updateState((s) => {
+        if (!s.eliteTms) s.eliteTms = { usage: [] };
+        s.eliteTms.usage.push({ date: todayISO(), pokemon: "", move: "", tmType: "charged" });
+      });
+    });
+    const etmBody = document.getElementById("etm-body");
+    if (etmBody) {
+      bindTableInputs(etmBody, (idx, field, val) => updateState((s) => { s.eliteTms.usage[idx][field] = val; }));
+      etmBody.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => updateState((s) => { s.eliteTms.usage.splice(parseInt(btn.dataset.del, 10), 1); }));
+      });
+    }
   }
 
   const xp = calcXpInfo(r.totalXp);
@@ -590,6 +653,87 @@ function renderMega() {
   });
 }
 
+function renderRaidBosses() {
+  const grid = document.getElementById("raid-bosses-grid");
+  if (!grid) return;
+  grid.innerHTML = RAID_BOSSES.map((boss) => {
+    const detail = getRaidBossDetail(boss.id);
+    const types = (detail.pokemon?.types || []).map((t) => `<span class="type-tag">${esc(t)}</span>`).join("");
+    return `<div class="raid-boss-card">
+      <h4>${esc(boss.name)} <small>T${boss.tier}</small></h4>
+      <div class="type-tags-wrap">${types}</div>
+      <p class="raid-counters-label">Contatori:</p>
+      <ul class="hunter-list">${boss.counters.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>
+      <button type="button" class="btn btn-secondary btn-sm raid-info-btn" data-id="${boss.id}">Dettagli</button>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".raid-info-btn").forEach((btn) => {
+    btn.addEventListener("click", () => openSpeciesModal(Number(btn.dataset.id)));
+  });
+}
+
+function renderEggs() {
+  const body = document.getElementById("eggs-body");
+  if (!body) return;
+  if (!state.eggs?.length) {
+    body.innerHTML = `<tr><td colspan="9" class="empty-msg">Nessuna uova in incubazione.</td></tr>`;
+    return;
+  }
+  body.innerHTML = state.eggs.map((egg, i) => `<tr data-idx="${i}">
+    <td><select data-field="distance">${EGG_DISTANCES.map((d) => `<option value="${d}"${egg.distance === d ? " selected" : ""}>${d} km</option>`).join("")}</select></td>
+    <td><input type="text" class="table-input" value="${esc(egg.pokemon)}" data-field="pokemon" placeholder="?"></td>
+    <td><select data-field="incubator">${["Normale", "Infinite", "Super"].map((t) => `<option value="${t}"${egg.incubator === t ? " selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><input type="number" class="table-input" min="0" step="0.1" value="${egg.kmWalked ?? 0}" data-field="kmWalked"></td>
+    <td><select data-field="status">${["In incubazione", "Pronta", "Schiusa"].map((t) => `<option value="${t}"${egg.status === t ? " selected" : ""}>${t}</option>`).join("")}</select></td>
+    <td><input type="date" class="table-input" value="${egg.startDate || ""}" data-field="startDate"></td>
+    <td><input type="date" class="table-input" value="${egg.hatchDate || ""}" data-field="hatchDate"></td>
+    <td><input type="text" class="table-input" value="${esc(egg.notes)}" data-field="notes"></td>
+    <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
+  </tr>`).join("");
+  bindTableInputs(body, (idx, field, val) => updateState((s) => {
+    if (field === "distance" || field === "kmWalked") s.eggs[idx][field] = Number(val) || 0;
+    else s.eggs[idx][field] = val;
+  }));
+  body.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => updateState((s) => { s.eggs.splice(parseInt(btn.dataset.del, 10), 1); }));
+  });
+}
+
+function renderBreakthrough() {
+  const panel = document.getElementById("breakthrough-panel");
+  if (!panel) return;
+  const bt = state.breakthrough || { stamps: 0, lastReward: "", history: [] };
+  panel.innerHTML = `
+    <h3>⭐ Ricerca settimanale (Breakthrough)</h3>
+    <div class="form-grid breakthrough-form">
+      <div class="form-field"><label>Timbri questa settimana</label><input type="number" min="0" max="7" id="bt-stamps" value="${bt.stamps ?? 0}"></div>
+      <div class="form-field"><label>Ultima ricompensa</label><input type="text" id="bt-reward" value="${esc(bt.lastReward)}" placeholder="Pokémon o oggetto"></div>
+    </div>
+    <div class="breakthrough-stamps">${Array.from({ length: 7 }, (_, i) =>
+      `<span class="stamp${i < bt.stamps ? " filled" : ""}">${i + 1}</span>`
+    ).join("")}</div>
+    ${bt.history?.length ? `<ul class="hunter-list">${bt.history.slice(-5).reverse().map((h) =>
+      `<li>${esc(h.date)} — ${esc(h.reward)}</li>`
+    ).join("")}</ul>` : ""}`;
+  document.getElementById("bt-stamps")?.addEventListener("change", (e) => {
+    updateState((s) => {
+      if (!s.breakthrough) s.breakthrough = { stamps: 0, lastReward: "", history: [] };
+      s.breakthrough.stamps = Math.min(7, Math.max(0, parseInt(e.target.value, 10) || 0));
+      if (s.breakthrough.stamps >= 7 && s.breakthrough.lastReward) {
+        s.breakthrough.history.push({ date: todayISO(), reward: s.breakthrough.lastReward });
+        s.breakthrough.stamps = 0;
+        s.breakthrough.lastReward = "";
+      }
+    });
+  });
+  document.getElementById("bt-reward")?.addEventListener("change", (e) => {
+    updateState((s) => {
+      if (!s.breakthrough) s.breakthrough = { stamps: 0, lastReward: "", history: [] };
+      s.breakthrough.lastReward = e.target.value;
+    });
+  });
+}
+
 let toolsInitialized = false;
 
 function renderTools() {
@@ -618,6 +762,32 @@ function renderTools() {
         Number(document.getElementById("cp-level").value) || 40,
       );
       document.getElementById("cp-calc-result").textContent = `CP stimato: ${fmtNum(cp)}`;
+    });
+  }
+
+  const pvpForm = document.getElementById("pvp-calc-form");
+  if (pvpForm) {
+    pvpForm.innerHTML = `
+      <div class="form-field"><label>Attacco base</label><input type="number" min="0" id="pvp-base-atk" value="100"></div>
+      <div class="form-field"><label>Difesa base</label><input type="number" min="0" id="pvp-base-def" value="100"></div>
+      <div class="form-field"><label>PS base</label><input type="number" min="0" id="pvp-base-sta" value="100"></div>
+      <div class="form-field"><label>IV Att</label><input type="number" min="0" max="15" id="pvp-iv-atk" value="0"></div>
+      <div class="form-field"><label>IV Dif</label><input type="number" min="0" max="15" id="pvp-iv-def" value="15"></div>
+      <div class="form-field"><label>IV PS</label><input type="number" min="0" max="15" id="pvp-iv-sta" value="15"></div>
+      <div class="form-field"><label>Lega</label><select id="pvp-league"><option value="grande">Grande (1500)</option><option value="ultra">Ultra (2500)</option><option value="master">Master</option></select></div>
+      <button type="button" id="btn-pvp-calc" class="btn btn-primary">Calcola rank PvP</button>`;
+    document.getElementById("btn-pvp-calc")?.addEventListener("click", () => {
+      const r = calcPvpRank(
+        Number(document.getElementById("pvp-base-atk").value) || 0,
+        Number(document.getElementById("pvp-base-def").value) || 0,
+        Number(document.getElementById("pvp-base-sta").value) || 0,
+        Number(document.getElementById("pvp-iv-atk").value) || 0,
+        Number(document.getElementById("pvp-iv-def").value) || 0,
+        Number(document.getElementById("pvp-iv-sta").value) || 0,
+        document.getElementById("pvp-league").value,
+      );
+      document.getElementById("pvp-calc-result").textContent =
+        `Lega ${r.league}: CP ${fmtNum(r.cp)} @ livello ${r.level} · IV ${r.ivPct}% · Prodotto ${r.product}`;
     });
   }
 
@@ -673,30 +843,60 @@ function renderBuddies() {
 }
 
 function renderEvents() {
-  const body = document.getElementById("events-body");
-  if (!body) return;
-  if (state.events.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" class="empty-msg">Nessun evento registrato.</td></tr>`;
-    return;
-  }
-  body.innerHTML = state.events.map((ev, i) => `<tr data-idx="${i}">
-    <td><input type="date" class="table-input" value="${ev.date || ""}" data-field="date"></td>
-    <td><input type="text" class="table-input" value="${esc(ev.name)}" data-field="name"></td>
-    <td><select data-field="type">
-      ${["Community Day", "Raid Day", "GO Fest", "Spotlight Hour", "Altro"].map((t) =>
-        `<option value="${t}"${ev.type === t ? " selected" : ""}>${t}</option>`).join("")}
-    </select></td>
-    <td><input type="text" class="table-input" value="${esc(ev.pokemon)}" data-field="pokemon"></td>
-    <td><input type="number" class="table-input" min="0" value="${ev.shinies ?? 0}" data-field="shinies"></td>
-    <td><input type="text" class="table-input" value="${esc(ev.notes)}" data-field="notes"></td>
-    <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
-  </tr>`).join("");
-  bindTableInputs(body, (idx, field, val) => updateState((s) => {
-    s.events[idx][field] = field === "shinies" ? Number(val) || 0 : val;
-  }));
-  body.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.addEventListener("click", () => updateState((s) => { s.events.splice(parseInt(btn.dataset.del, 10), 1); }));
+  document.querySelectorAll(".events-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === eventsView);
   });
+  document.getElementById("events-list-panel")?.classList.toggle("hidden", eventsView !== "list");
+  document.getElementById("events-calendar-panel")?.classList.toggle("hidden", eventsView !== "calendar");
+
+  const body = document.getElementById("events-body");
+  if (body) {
+    if (state.events.length === 0) {
+      body.innerHTML = `<tr><td colspan="9" class="empty-msg">Nessun evento registrato.</td></tr>`;
+    } else {
+      body.innerHTML = state.events.map((ev, i) => {
+        const countdown = formatCountdown(daysUntil(ev.endDate || ev.date));
+        return `<tr data-idx="${i}">
+          <td><input type="date" class="table-input" value="${ev.date || ""}" data-field="date"></td>
+          <td><input type="date" class="table-input" value="${ev.endDate || ""}" data-field="endDate"></td>
+          <td><input type="text" class="table-input" value="${esc(ev.name)}" data-field="name"></td>
+          <td><select data-field="type">
+            ${["Community Day", "Raid Day", "GO Fest", "Spotlight Hour", "Altro"].map((t) =>
+              `<option value="${t}"${ev.type === t ? " selected" : ""}>${t}</option>`).join("")}
+          </select></td>
+          <td><input type="text" class="table-input" value="${esc(ev.pokemon)}" data-field="pokemon"></td>
+          <td><input type="number" class="table-input" min="0" value="${ev.shinies ?? 0}" data-field="shinies"></td>
+          <td class="computed">${esc(countdown)}</td>
+          <td><input type="text" class="table-input" value="${esc(ev.notes)}" data-field="notes"></td>
+          <td><button class="btn btn-danger" data-del="${i}">✕</button></td>
+        </tr>`;
+      }).join("");
+      bindTableInputs(body, (idx, field, val) => updateState((s) => {
+        s.events[idx][field] = field === "shinies" ? Number(val) || 0 : val;
+      }));
+      body.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => updateState((s) => { s.events.splice(parseInt(btn.dataset.del, 10), 1); }));
+      });
+    }
+  }
+
+  const cal = document.getElementById("events-calendar");
+  if (cal && eventsView === "calendar") {
+    const upcoming = getUpcomingEvents();
+    cal.innerHTML = upcoming.length
+      ? upcoming.map((ev) => {
+        const cd = formatCountdown(ev.days);
+        const cls = ev.days !== null && ev.days < 0 ? "past" : ev.days === 0 ? "today" : "";
+        return `<div class="event-cal-card ${cls}">
+          <div class="event-cal-date">${esc(ev.date)}${ev.endDate ? ` → ${esc(ev.endDate)}` : ""}</div>
+          <strong>${esc(ev.name) || "Evento"}</strong>
+          <span class="event-cal-type">${esc(ev.type)}</span>
+          ${ev.pokemon ? `<span class="event-cal-poke">${esc(ev.pokemon)}</span>` : ""}
+          <span class="event-cal-countdown">${esc(cd)}</span>
+        </div>`;
+      }).join("")
+      : "<p class='empty-msg'>Nessun evento in calendario.</p>";
+  }
 }
 
 function renderQuests() {
@@ -958,11 +1158,49 @@ function initMedalModal() {
   });
 }
 
+function initGlobalSearch() {
+  const input = document.getElementById("global-search");
+  const results = document.getElementById("global-search-results");
+  if (!input || !results) return;
+  let timer = null;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const q = input.value.trim();
+      if (!q) { results.classList.add("hidden"); return; }
+      const items = globalSearch(q);
+      if (!items.length) {
+        results.innerHTML = "<p class='empty-msg'>Nessun risultato.</p>";
+      } else {
+        results.innerHTML = items.map((item, i) =>
+          `<button type="button" class="search-result-item" data-idx="${i}">
+            <span>${item.icon}</span> <strong>${esc(item.title)}</strong><br><small>${esc(item.subtitle)}</small>
+          </button>`
+        ).join("");
+        results.querySelectorAll(".search-result-item").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const item = items[parseInt(btn.dataset.idx, 10)];
+            if (item.action) item.action();
+            else if (item.section) document.querySelector(`.nav-btn[data-section="${item.section}"]`)?.click();
+            results.classList.add("hidden");
+            input.value = "";
+          });
+        });
+      }
+      results.classList.remove("hidden");
+    }, 200);
+  });
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target) && !results.contains(e.target)) results.classList.add("hidden");
+  });
+}
+
 function init() {
   loadApp();
   seedHistories();
   initNav();
   initMobileMenu();
+  initGlobalSearch();
   initMedalModal();
   initSpeciesModal();
   renderAll();
@@ -1003,7 +1241,16 @@ function init() {
     updateState((s) => { s.buddies.push({ pokemon: "", active: false, friendship: "", km: 0, candies: 0, hearts: 0, startDate: todayISO() }); });
   });
   document.getElementById("btn-add-event").addEventListener("click", () => {
-    updateState((s) => { s.events.push({ date: todayISO(), name: "", type: "Community Day", pokemon: "", shinies: 0, notes: "" }); });
+    updateState((s) => { s.events.push({ date: todayISO(), endDate: "", name: "", type: "Community Day", pokemon: "", shinies: 0, notes: "" }); });
+  });
+  document.querySelectorAll(".events-tab").forEach((btn) => {
+    btn.addEventListener("click", () => { eventsView = btn.dataset.view; renderEvents(); });
+  });
+  document.getElementById("btn-add-egg")?.addEventListener("click", () => {
+    updateState((s) => {
+      if (!s.eggs) s.eggs = [];
+      s.eggs.push({ distance: 2, pokemon: "", incubator: "Normale", kmWalked: 0, status: "In incubazione", startDate: todayISO(), hatchDate: "", notes: "" });
+    });
   });
   document.getElementById("btn-add-quest").addEventListener("click", () => {
     updateState((s) => { s.quests.push({ name: "", type: "Speciale", status: "In corso", dateStarted: todayISO(), dateCompleted: "", notes: "" }); });
@@ -1025,6 +1272,7 @@ function init() {
   });
 
   document.getElementById("btn-export").addEventListener("click", exportDataWithBackupMark);
+  document.getElementById("btn-export-csv")?.addEventListener("click", exportCsvData);
   document.getElementById("btn-export-excel").addEventListener("click", exportExcelData);
   document.getElementById("btn-import").addEventListener("click", () => document.getElementById("import-file").click());
   document.getElementById("import-file").addEventListener("change", (e) => {

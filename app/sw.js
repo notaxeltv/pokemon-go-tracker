@@ -1,7 +1,7 @@
-const CACHE = "go-tracker-v6";
+const CACHE = "go-tracker-v7";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./core.js", "./charts.js", "./sync.js",
-  "./extras.js", "./tools.js", "./medals.js", "./pokemon.js", "./manifest.json",
+  "./extras.js", "./features.js", "./tools.js", "./medals.js", "./pokemon.js", "./manifest.json",
   "./vendor/xlsx.mini.min.js",
 ];
 
